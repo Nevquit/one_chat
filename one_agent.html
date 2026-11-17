@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wanchain Agent | 架构可视化与全开源技术蓝图</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#090D16',
+                            card: '#111827',
+                            surface: '#1E293B',
+                            border: '#334155',
+                            cyan: '#06B6D4',
+                            blue: '#3B82F6',
+                            purple: '#8B5CF6',
+                            emerald: '#10B981',
+                            amber: '#F59E0B',
+                            rose: '#F43F5E'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'flow': 'dash 1.5s linear infinite',
+                    },
+                    keyframes: {
+                        dash: {
+                            'to': { strokeDashoffset: '-24' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #090D16;
+            color: #F8FAFC;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090D16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(51, 65, 85, 0.6);
+        }
+
+        /* 节点激活发光效果 */
+        .node-active-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            border-color: #06B6D4 !important;
+        }
+        .node-active-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+            border-color: #8B5CF6 !important;
+        }
+        .node-active-emerald {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+            border-color: #10B981 !important;
+        }
+        .node-active-amber {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            border-color: #F59E0B !important;
+        }
+
+        /* 流动连接线动画 */
+        .flow-line-active {
+            stroke-dasharray: 6, 6;
+            animation: dash 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+    <!-- 顶部导航栏 -->
+    <header class="sticky top-0 z-50 glass-card border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between py-4 gap-4">
+                <!-- Logo & 标题 -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                        <i class="fa-solid fa-diagram-project text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-xl font-bold tracking-tight text-white font-mono">wanchain-agent</h1>
+                            <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Hexagonal + LangGraph</span>
+                        </div>
+                        <p class="text-xs text-slate-400">全开源 Web3 跨链与知识问答智能体架构蓝图</p>
+                    </div>
+                </div>
+
+                <!-- 导航 Tabs -->
+                <nav class="flex flex-wrap gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800" id="nav-tabs">
+                    <button onclick="switchTab('flow')" data-tab="flow" class="tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                        <i class="fa-solid fa-route"></i>
+                        <span>完整架构与链路</span>
+                    </button>
+                    <button onclick="switchTab('tree')" data-tab="tree" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-2">
+                        <i class="fa-solid fa-folder-tree"></i>
+                        <span>项目目录结构树</span>
+                    </button>
+                    <button onclick="switchTab('stack')" data-tab="stack" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>全开源免费技术栈</span>
+                    </button>
+                    <button onclick="switchTab('concepts')" data-tab="concepts" class="tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-2">
+                        <i class="fa-solid fa-microchip"></i>
+                        <span>Orchestration vs Routing</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ===================================================================== -->
+        <!-- TAB 1: 完整架构与请求链路 (End-to-End Request Flow)                     -->
+        <!-- ===================================================================== -->
+        <section id="tab-flow" class="tab-content block space-y-6">
+            <!-- 顶部说明与路径过滤器 -->
+            <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-base sm:text-lg font-semibold text-white flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                        端到端请求生命周期交互图
+                    </h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">点击下方任意架构节点查看对应的 <code class="text-cyan-400">.py</code> 文件职责、Pydantic 模型及安全边界；或切换链路高亮模式。</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="highlightPath('all')" id="btn-path-all" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-700 text-white border border-slate-600 transition">全部展示</button>
+                    <button onclick="highlightPath('rag')" id="btn-path-rag" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition">
+                        <i class="fa-solid fa-book-open mr-1"></i>高亮 RAG 问答流
+                    </button>
+                    <button onclick="highlightPath('bridge')" id="btn-path-bridge" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition">
+                        <i class="fa-solid fa-bridge mr-1"></i>高亮跨链交易流
+                    </button>
+                </div>
+            </div>
+
+            <!-- 交互式流程图 + 右侧详情检查器 -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- 左侧：架构节点画布 (7列) -->
+                <div class="lg:col-span-7 space-y-4">
+                    
+                    <!-- 1. 前端入口 -->
+                    <div onclick="selectNode('frontend')" id="node-frontend" class="flow-node cursor-pointer glass-card rounded-xl p-4 border-l-4 border-l-blue-500 hover:border-blue-400 transition-all duration-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-desktop"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-mono text-blue-400">STEP 01 • ENTRYPOINT</div>
+                                    <h3 class="text-sm sm:text-base font-semibold text-white">Web 前端 Chat 入口 (Next.js / Vercel)</h3>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-300">SSE / REST</span>
+                        </div>
+                    </div>
+
+                    <!-- 向下箭头 -->
+                    <div class="flex justify-center text-slate-600"><i class="fa-solid fa-arrow-down"></i></div>
+
+                    <!-- 2. FastAPI 后端网关 -->
+                    <div onclick="selectNode('fastapi')" id="node-fastapi" class="flow-node cursor-pointer glass-card rounded-xl p-4 border-l-4 border-l-cyan-500 hover:border-cyan-400 transition-all duration-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                                    <i class="fa-solid fa-server"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-mono text-cyan-400">STEP 02 • API GATEWAY</div>
+                                    <h3 class="text-sm sm:text-base font-semibold text-white">FastAPI 后端入口 <code class="text-xs text-cyan-300 bg-cyan-950/60 px-1.5 py-0.5 rounded">app.py</code></h3>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-300">Async Stream</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center text-slate-600"><i class="fa-solid fa-arrow-down"></i></div>
+
+                    <!-- 3. LangGraph Orchestration 中枢框 -->
+                    <div class="rounded-2xl border-2 border-dashed border-purple-500/40 bg-purple-950/10 p-4 space-y-4 relative">
+                        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-purple-500/20">
+                            <div onclick="selectNode('orchestration')" id="node-orchestration" class="flow-node cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/40 hover:bg-purple-500/30 transition">
+                                <i class="fa-solid fa-dharmachakra text-purple-400"></i>
+                                <span class="text-xs sm:text-sm font-semibold text-purple-200">LangGraph Orchestration 编排中枢</span>
+                                <code class="text-xs font-mono text-purple-300 hidden sm:inline">(graph.py / state.py / nodes.py)</code>
+                            </div>
+                            <span class="text-xs font-mono text-purple-400 bg-purple-950 px-2 py-1 rounded border border-purple-800/50">
+                                <i class="fa-solid fa-database mr-1"></i>Upstash Redis Checkpointer
+                            </span>
+                        </div>
+
+                        <!-- 3.1 Router Node -->
+                        <div onclick="selectNode('routing')" id="node-routing" class="flow-node cursor-pointer glass-card rounded-xl p-4 border-l-4 border-l-purple-500 hover:border-purple-400 transition-all duration-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                                        <i class="fa-solid fa-code-branch"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs font-mono text-purple-400">STEP 03 • ROUTER NODE</div>
+                                        <h3 class="text-sm sm:text-base font-semibold text-white">意图路由决策 <code class="text-xs text-purple-300">rules.py → classifier.py → router.py</code></h3>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-mono px-2 py-1 rounded bg-purple-950 text-purple-300 border border-purple-700/50">RoutingDecision</span>
+                            </div>
+                        </div>
+
+                        <!-- 条件边分支指示 -->
+                        <div class="grid grid-cols-2 gap-4 text-center text-xs font-mono">
+                            <div class="text-emerald-400 flex flex-col items-center">
+                                <span>intent == "rag"</span>
+                                <i class="fa-solid fa-arrow-down mt-1"></i>
+                            </div>
+                            <div class="text-amber-400 flex flex-col items-center">
+                                <span>intent == "bridge"</span>
+                                <i class="fa-solid fa-arrow-down mt-1"></i>
+                            </div>
+                        </div>
+
+                        <!-- 双分支并行容器 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            
+                            <!-- 分支 A: Knowledge RAG -->
+                            <div onclick="selectNode('knowledge')" id="node-knowledge" class="flow-node path-rag cursor-pointer glass-card rounded-xl p-4 border-t-4 border-t-emerald-500 hover:border-emerald-400 transition-all duration-200 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">分支 A • 知识问答</span>
+                                        <i class="fa-solid fa-book-sparkles text-emerald-400"></i>
+                                    </div>
+                                    <h4 class="text-sm font-semibold text-white mb-1">Knowledge RAG 检索流</h4>
+                                    <p class="text-xs text-slate-400 mb-3">消费 Wanchain <code>.md</code> 文档库，执行检索、重排与边界拒答防护。</p>
+                                </div>
+                                <div class="space-y-1.5 text-xs font-mono bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                                    <div class="text-emerald-300">• pipeline.py (检索→生成)</div>
+                                    <div class="text-emerald-300">• guard.py (Faithfulness拒答)</div>
+                                    <div class="text-slate-400">• Haystack / ChromaDB</div>
+                                </div>
+                            </div>
+
+                            <!-- 分支 B: Cross-Chain Bridge -->
+                            <div class="path-bridge space-y-3">
+                                <!-- 跨链状态机 -->
+                                <div onclick="selectNode('bridge')" id="node-bridge" class="flow-node cursor-pointer glass-card rounded-xl p-4 border-t-4 border-t-amber-500 hover:border-amber-400 transition-all duration-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">分支 B • 跨链构建</span>
+                                        <i class="fa-solid fa-link text-amber-400"></i>
+                                    </div>
+                                    <h4 class="text-sm font-semibold text-white mb-1">Bridge 跨链工作流</h4>
+                                    <div class="space-y-1 text-xs font-mono bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 mt-2">
+                                        <div class="text-amber-300">1. validator.py (纯函数校验)</div>
+                                        <div class="text-amber-300">2. simulator.py (Gas/模拟)</div>
+                                        <div class="text-amber-300">3. preview.py (TxPreview)</div>
+                                        <div class="text-rose-400 font-semibold mt-1 pt-1 border-t border-slate-800">
+                                            <i class="fa-solid fa-hand mr-1"></i>4. LangGraph interrupt() 暂停
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 非托管钱包签名与追踪 -->
+                                <div onclick="selectNode('wallet')" id="node-wallet" class="flow-node cursor-pointer glass-card rounded-xl p-3.5 border border-rose-500/40 bg-rose-950/10 hover:border-rose-400 transition-all duration-200">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-xs font-mono text-rose-400 font-semibold">
+                                            <i class="fa-solid fa-shield-halved mr-1"></i>非托管签名 & 状态追踪
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-300 leading-relaxed">
+                                        <code class="text-rose-300">signer_external.py</code> 生成未签名载荷 → <strong>用户钱包签名广播</strong> → <code class="text-amber-300">bridge_wanchain.py</code> (httpx) 只读轮询状态。
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- 底部横切观测与返回 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div onclick="selectNode('langfuse')" id="node-langfuse" class="flow-node cursor-pointer glass-card rounded-xl p-3.5 border-l-4 border-l-indigo-500 hover:border-indigo-400 transition">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid fa-chart-line text-indigo-400"></i>
+                                <div>
+                                    <div class="text-xs font-mono text-indigo-400">OBSERVABILITY (横切异步)</div>
+                                    <div class="text-xs sm:text-sm font-medium text-white">Langfuse + OpenTelemetry 追踪</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="selectNode('response')" id="node-response" class="flow-node cursor-pointer glass-card rounded-xl p-3.5 border-l-4 border-l-cyan-500 hover:border-cyan-400 transition">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid fa-reply-all text-cyan-400"></i>
+                                <div>
+                                    <div class="text-xs font-mono text-cyan-400">FINAL OUTPUT</div>
+                                    <div class="text-xs sm:text-sm font-medium text-white">SSE 流式返回回答 / TxPreview 卡片</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 右侧：节点详情检查器 (5列) -->
+                <div class="lg:col-span-5 sticky top-24">
+                    <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-700/80 shadow-2xl" id="node-inspector">
+                        <!-- 动态内容由 JS 填充 -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 2: 项目目录结构树 (Hexagonal Architecture Directory Tree)         -->
+        <!-- ===================================================================== -->
+        <section id="tab-tree" class="tab-content hidden space-y-6">
+            <div class="glass-card rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">六边形架构与 Monorepo 目录规范</h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">点击目录或文件查看职责说明。严格遵循<strong>单向依赖原则</strong>：<code class="text-cyan-400">src/</code> 核心业务零外部框架耦合，评测作为一等公民独立管理。</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleAllFolders(true)" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">全部展开</button>
+                    <button onclick="toggleAllFolders(false)" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">全部折叠</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- 左侧目录树 (7列) -->
+                <div class="lg:col-span-7 glass-card rounded-2xl p-5 font-mono text-xs sm:text-sm overflow-x-auto" id="directory-tree-container">
+                    <!-- 目录树由 JS 动态渲染 -->
+                </div>
+
+                <!-- 右侧依赖规则与文件详情 (5列) -->
+                <div class="lg:col-span-5 space-y-6">
+                    <!-- 选中文件说明卡片 -->
+                    <div class="glass-card rounded-2xl p-5 border border-cyan-500/30" id="file-detail-card">
+                        <div class="text-xs font-mono text-cyan-400 mb-1">FILE INSPECTOR</div>
+                        <h3 class="text-base font-bold text-white font-mono mb-2" id="file-detail-name">wanchain-agent/</h3>
+                        <p class="text-sm text-slate-300 leading-relaxed mb-4" id="file-detail-desc">点击左侧树形结构中的任意文件或文件夹，查看其六边形架构层级、依赖约束与实现细节。</p>
+                        <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800">
+                            <div class="text-xs text-slate-400 mb-1">架构层级 / 约束规则：</div>
+                            <div class="text-xs font-mono text-emerald-400" id="file-detail-rule">Monorepo 顶级工作区</div>
+                        </div>
+                    </div>
+
+                    <!-- 六边形架构单向依赖法则 -->
+                    <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
+                        <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-shield-cat text-amber-400"></i>
+                            六边形架构核心依赖铁律
+                        </h3>
+                        <div class="space-y-3 text-xs text-slate-300">
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div class="font-semibold text-cyan-400 mb-1">1. 核心层零外部依赖 (core/)</div>
+                                <p class="text-slate-400"><code>models.py</code> 与 <code>ports.py</code> 仅依赖 Python 标准库与 Pydantic，绝对不导入 LangChain、httpx 或任何数据库 SDK。</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div class="font-semibold text-purple-400 mb-1">2. 依赖倒置 (Ports & Adapters)</div>
+                                <p class="text-slate-400"><code>routing/</code>、<code>knowledge/</code>、<code>bridge/</code> 仅通过 <code>ports.py</code> 定义的 Protocol 接口工作；具体实现全部收口在 <code>adapters/</code> 中。</p>
+                            </div>
+                            <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                                <div class="font-semibold text-emerald-400 mb-1">3. 评测单向隔离 (evaluation/)</div>
+                                <p class="text-slate-400">顶级 <code>evaluation/</code> 可导入 <code>src/</code> 的模型进行断言，但 <code>src/</code> 严禁反向依赖 <code>deepeval</code> 或 <code>ragas</code>，保证生产镜像轻量纯净。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 3: 全开源免费技术栈对照 (Open-Source & Free-Tier Tech Stack)       -->
+        <!-- ===================================================================== -->
+        <section id="tab-stack" class="tab-content hidden space-y-6">
+            <div class="glass-card rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">全开源栈 & 零成本（Free-Tier）云部署对照表</h2>
+                    <p class="text-xs sm:text-sm text-slate-400 mt-1">去掉复杂第三方黑盒（如 Layerhop），采用原生轻量封装 + Serverless 免费额度，实现零服务器费用落地。</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <i class="fa-solid fa-coins mr-1"></i>月度基础云成本: $0
+                    </span>
+                </div>
+            </div>
+
+            <!-- 响应式技术栈表格 -->
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900/90 border-b border-slate-800 text-xs font-mono text-slate-400 uppercase">
+                                <th class="py-3.5 px-4">架构层级</th>
+                                <th class="py-3.5 px-4">开源技术选型</th>
+                                <th class="py-3.5 px-4">对应项目路径</th>
+                                <th class="py-3.5 px-4">免费托管 / 零成本落地方案</th>
+                                <th class="py-3.5 px-4">核心设计说明</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/70 text-xs sm:text-sm" id="tech-stack-tbody">
+                            <!-- 由 JS 渲染 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================================== -->
+        <!-- TAB 4: 核心概念解析 (Orchestration vs Routing + Trace Simulator)      -->
+        <!-- ===================================================================== -->
+        <section id="tab-concepts" class="tab-content hidden space-y-6">
+            
+            <!-- 概念对比卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Routing 卡片 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-cyan-500 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-signs-post"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-white">Routing（意图路由层）</h3>
+                                <span class="text-xs font-mono text-cyan-400">src/wanchain_agent/routing/</span>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded text-xs font-mono bg-slate-800 text-slate-300">无状态 / 局部决策</span>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        好比医院的<strong>“导诊台”</strong>或铁路的<strong>“转辙机”</strong>。它只专注于回答一个问题：<strong>“用户这句话想干什么，应该去哪？”</strong>
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-400 bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-cyan-400 mt-0.5"></i><span><strong>规则优先 (rules.py)</strong>：正则/关键词毫秒级拦截高频明确意图。</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-cyan-400 mt-0.5"></i><span><strong>LLM 兜底 (classifier.py)</strong>：输出严格 Pydantic 结构 <code>RoutingDecision</code> 与槽位参数。</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-cyan-400 mt-0.5"></i><span><strong>边界清晰</strong>：不查文档、不算跨链、不管理长对话状态。</span></li>
+                    </ul>
+                </div>
+
+                <!-- Orchestration 卡片 -->
+                <div class="glass-card rounded-2xl p-6 border-t-4 border-t-purple-500 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-network-wired"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-white">Orchestration（编排中枢层）</h3>
+                                <span class="text-xs font-mono text-purple-400">src/wanchain_agent/orchestration/</span>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded text-xs font-mono bg-purple-950 text-purple-300 border border-purple-700/50">有状态 / 全局总导演</span>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        好比整个应用的<strong>“控制中枢与总导演”</strong>。它统一调度 Routing、Knowledge 和 Bridge 节点，控制<strong>“按什么顺序走、何时暂停、如何恢复”</strong>。
+                    </p>
+                    <ul class="space-y-2 text-xs text-slate-400 bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-purple-400 mt-0.5"></i><span><strong>全局状态机 (GraphState)</strong>：持有上下文消息、路由决策、交易预览等全量状态。</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-purple-400 mt-0.5"></i><span><strong>调度下游模块</strong>：阶段三的 RAG 检索与 Bridge 校验均由编排层的条件边触发调用。</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-purple-400 mt-0.5"></i><span><strong>Human-in-the-loop</strong>：跨链前触发 <code>interrupt()</code> 冻结状态至 Redis，等待钱包签名后唤醒。</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 交互式轨迹模拟器 (Trace Player) -->
+            <div class="glass-card rounded-2xl p-5 sm:p-6 border border-slate-700/80 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-play-circle text-cyan-400"></i>
+                            LangGraph 状态机执行轨迹模拟器
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">选择测试场景，逐步观察 Orchestration 如何调度各个 <code>.py</code> 模块及 <code>GraphState</code> 演变。</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadScenario('rag')" id="sim-btn-rag" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition">
+                            场景 A：知识问答 ("Wanchain 跨链原理？")
+                        </button>
+                        <button onclick="loadScenario('bridge')" id="sim-btn-bridge" class="px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
+                            场景 B：跨链交易 ("转 100 USDT 从 ETH 到 BSC")
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 播放器控制条 -->
+                <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <button onclick="prevStep()" id="btn-prev-step" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium disabled:opacity-40 transition">
+                            <i class="fa-solid fa-backward-step mr-1"></i>上一步
+                        </button>
+                        <button onclick="nextStep()" id="btn-next-step" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium disabled:opacity-40 transition">
+                            下一步<i class="fa-solid fa-forward-step ml-1"></i>
+                        </button>
+                        <button onclick="resetSim()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-medium transition">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400">
+                        执行进度：<span id="sim-step-counter" class="text-cyan-400 font-bold">1 / 5</span>
+                    </div>
+                </div>
+
+                <!-- 步骤时间线与 GraphState JSON 实时预览 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- 左侧步骤列表 (7列) -->
+                    <div class="lg:col-span-7 space-y-3" id="sim-steps-list">
+                        <!-- JS 动态渲染 -->
+                    </div>
+
+                    <!-- 右侧实时 GraphState 检查器 (5列) -->
+                    <div class="lg:col-span-5 bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs">
+                        <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+                            <span class="text-purple-400 font-semibold"><i class="fa-solid fa-code mr-1.5"></i>实时 GraphState 快照</span>
+                            <span class="text-slate-500" id="sim-state-status">RUNNING</span>
+                        </div>
+                        <pre class="text-slate-300 overflow-x-auto leading-relaxed" id="sim-state-json"></pre>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- 底部版权与架构声明 -->
+    <footer class="border-t border-slate-800/80 py-5 mt-8 bg-slate-950/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+            <div>Wanchain Agent Architecture Blueprint • 六边形架构 + LangGraph + 非托管 Web3 安全设计</div>
+            <div class="font-mono">Core Zero-Dependency • Monorepo Evaluation First</div>
+        </div>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- JavaScript 交互逻辑与数据定义                                          -->
+    <!-- ===================================================================== -->
+    <script>
+        // ---------------------------------------------------------------------
+        // 1. Tab 切换逻辑
+        // ---------------------------------------------------------------------
+        function switchTab(tabId) {
+            // 隐藏所有 tab 内容
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
+            });
+            // 显示目标 tab
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('block');
+            }
+
+            // 更新导航按钮样式
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.className = 'tab-btn active px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 bg-cyan-500/15 text-cyan-300 border border-cyan-500/30';
+                } else {
+                    btn.className = 'tab-btn px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-2';
+                }
+            });
+        }
+
+        // ---------------------------------------------------------------------
+        // 2. Tab 1: 架构节点详情数据与交互
+        // ---------------------------------------------------------------------
+        const nodeDetailsData = {
+            frontend: {
+                badge: 'STEP 01 • ENTRYPOINT',
+                badgeColor: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+                title: 'Web 前端 Chat 入口',
+                files: ['frontend/ (Next.js / Vite + React)'],
+                role: '提供用户对话界面（UserChat）、渲染结构化跨链交易预览卡片（TxPreview），并在收到未签名载荷时拉起浏览器钱包（MetaMask / WanMask）完成签名广播。',
+                models: 'ChatRequest { session_id: str, message: str, wallet_address?: str }',
+                security: '前端负责私钥签名交互，后端与 Agent 永远不触碰用户私钥。'
+            },
+            fastapi: {
+                badge: 'STEP 02 • API GATEWAY',
+                badgeColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
+                title: 'FastAPI 异步网关服务',
+                files: ['src/wanchain_agent/app.py', 'src/wanchain_agent/config.py'],
+                role: '作为后端统一 HTTP 入口，通过 config.py 注入具体适配器（Adapters），初始化或恢复会话的 GraphState，并通过 SSE（Server-Sent Events）将执行状态与结果流式推回前端。',
+                models: 'SSEEvent { event: "token" | "tx_preview" | "interrupt", data: dict }',
+                security: '通过 Pydantic 严格校验输入载荷，防止恶意参数注入。'
+            },
+            orchestration: {
+                badge: 'CORE CONDUCTOR • STATE MACHINE',
+                badgeColor: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+                title: 'LangGraph 编排中枢',
+                files: [
+                    'src/wanchain_agent/orchestration/graph.py',
+                    'src/wanchain_agent/orchestration/state.py',
+                    'src/wanchain_agent/orchestration/nodes.py'
+                ],
+                role: '全局总导演。graph.py 定义节点拓扑与条件边；nodes.py 作为薄封装调用 routing/knowledge/bridge 模块；state.py 结合 Upstash Redis Checkpointer 实现多轮会话与断点持久化。',
+                models: 'GraphState(TypedDict): messages, routing_decision, rag_context, tx_preview, is_approved',
+                security: '在高风险跨链分支中强制配置 interrupt_before，确保未经人工确认绝不推进上链流程。'
+            },
+            routing: {
+                badge: 'STEP 03 • INTENT ROUTING',
+                badgeColor: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
+                title: '意图识别与槽位抽取',
+                files: [
+                    'src/wanchain_agent/routing/rules.py',
+                    'src/wanchain_agent/routing/classifier.py',
+                    'src/wanchain_agent/routing/router.py'
+                ],
+                role: '采用“规则优先 + LLM 兜底”的混合路由。rules.py 毫秒级匹配明确关键词；未命中时由 classifier.py 依赖 LLMPort 输出结构化分类与槽位；低置信度时路由至澄清节点。',
+                models: 'RoutingDecision(intent: Literal["rag", "bridge", "clarify"], confidence: float, slots: dict)',
+                security: '防止将普通的跨链概念咨询误判为真实资产划转指令。'
+            },
+            knowledge: {
+                badge: 'BRANCH A • KNOWLEDGE RAG',
+                badgeColor: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+                title: 'Wanchain 知识库问答流',
+                files: [
+                    'src/wanchain_agent/knowledge/pipeline.py',
+                    'src/wanchain_agent/knowledge/guard.py',
+                    'src/wanchain_agent/adapters/knowledge_haystack.py'
+                ],
+                role: '由 Orchestration 条件边触发。pipeline.py 检索 Wanchain 官方 .md 文档并进行重排与引用生成；guard.py 检查检索上下文相关性，低于阈值时触发边界拒答，杜绝幻觉。',
+                models: 'RAGResponse(answer: str, citations: list[DocChunk], faithfulness_score: float)',
+                security: '严格的边界拒答机制（Guardrails），防止大模型编造虚假的合约地址或跨链手续费率。'
+            },
+            bridge: {
+                badge: 'BRANCH B • CROSS-CHAIN WORKFLOW',
+                badgeColor: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
+                title: '跨链交易校验、模拟与预览',
+                files: [
+                    'src/wanchain_agent/bridge/validator.py',
+                    'src/wanchain_agent/bridge/simulator.py',
+                    'src/wanchain_agent/bridge/preview.py',
+                    'src/wanchain_agent/bridge/workflow.py'
+                ],
+                role: '纯函数校验源链/目标链与代币支持度（validator）→ 模拟执行并预估 Gas 与跨链桥费用（simulator）→ 生成人类可读交易卡片（preview）→ 触发 LangGraph interrupt() 暂停等待确认。',
+                models: 'TxPreview(from_chain, to_chain, token, amount, estimated_fee, receive_amount, unsigned_payload)',
+                security: '确定性纯函数校验 + 强制人工确认中断点，阻断任何自动化误操作。'
+            },
+            wallet: {
+                badge: 'NON-CUSTODIAL • EXECUTION & TRACKING',
+                badgeColor: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
+                title: '非托管外部钱包签名 & 跨链追踪',
+                files: [
+                    'src/wanchain_agent/adapters/signer_external.py',
+                    'src/wanchain_agent/adapters/bridge_wanchain.py'
+                ],
+                role: '去掉 layerhop 等重型中间件，直接用原生 httpx 封装 Wanchain createTx 返回未签名交易载荷。用户在前端钱包确认签名广播后，bridge_wanchain.py 只读轮询跨链状态。',
+                models: 'UnsignedTxPayload(to: str, data: str, value: str, chain_id: int)',
+                security: '绝对非托管原则（Non-custodial）：服务端零私钥存储，彻底消除私钥泄露风险。'
+            },
+            langfuse: {
+                badge: 'OBSERVABILITY • ASYNC TRACING',
+                badgeColor: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30',
+                title: '全链路可观测性与评估底座',
+                files: ['src/wanchain_agent/adapters/trace_langfuse.py'],
+                role: '异步采集每次对话的 LangGraph 节点流转轨迹、路由分类耗时、RAG 检索片段及 Token 消耗，为离线 DeepEval / RAGAS 评测提供真实生产数据回流。',
+                models: 'TraceSpan(trace_id, node_name, latency_ms, token_usage, metadata)',
+                security: '自动脱敏用户敏感地址或签名哈希，仅上报性能与质量遥测指标。'
+            },
+            response: {
+                badge: 'FINAL OUTPUT • STREAMING',
+                badgeColor: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30',
+                title: 'SSE 流式响应与交互闭环',
+                files: ['src/wanchain_agent/app.py'],
+                role: '将知识问答的 Markdown 文本流，或跨链流程挂起后的 TxPreview 结构化卡片实时推送至前端，完成一次完整的用户交互闭环。',
+                models: 'JSON / text/event-stream',
+                security: '断线重连可凭借 session_id 从 Upstash Redis 秒级恢复会话状态。'
+            }
+        };
+
+        function selectNode(nodeKey) {
+            const data = nodeDetailsData[nodeKey];
+            if (!data) return;
+
+            // 清除所有节点高亮边框
+            document.querySelectorAll('.flow-node').forEach(el => {
+                el.classList.remove('node-active-cyan', 'node-active-purple', 'node-active-emerald', 'node-active-amber');
+            });
+
+            // 为当前点击节点添加高亮
+            const activeEl = document.getElementById(`node-${nodeKey}`);
+            if (activeEl) {
+                if (nodeKey === 'knowledge') activeEl.classList.add('node-active-emerald');
+                else if (nodeKey === 'bridge' || nodeKey === 'wallet') activeEl.classList.add('node-active-amber');
+                else if (nodeKey === 'routing' || nodeKey === 'orchestration') activeEl.classList.add('node-active-purple');
+                else activeEl.classList.add('node-active-cyan');
+            }
+
+            // 渲染右侧检查器
+            const inspector = document.getElementById('node-inspector');
+            const filesHtml = data.files.map(f => `<div class="px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-cyan-300 font-mono text-xs flex items-center gap-2"><i class="fa-regular fa-file-code text-slate-500"></i>${f}</div>`).join('');
+
+            inspector.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <span class="px-2.5 py-1 rounded-md text-xs font-mono border ${data.badgeColor}">${data.badge}</span>
+                    <span class="text-xs text-slate-500 font-mono">NODE INSPECTOR</span>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-4">${data.title}</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">涉及模块与 .py 文件</div>
+                        <div class="space-y-1.5">${filesHtml}</div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">核心职责与执行逻辑</div>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800/80">${data.role}</p>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">输入 / 输出契约 (Pydantic)</div>
+                        <pre class="text-xs font-mono text-purple-300 bg-slate-950 p-3 rounded-xl border border-slate-800 overflow-x-auto">${data.models}</pre>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-start gap-2.5">
+                        <i class="fa-solid fa-shield-halved text-emerald-400 mt-0.5"></i>
+                        <div class="text-xs text-emerald-200/90 leading-relaxed">
+                            <strong class="text-emerald-300">安全与架构约束：</strong>${data.security}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightPath(mode) {
+            const ragEls = document.querySelectorAll('.path-rag');
+            const bridgeEls = document.querySelectorAll('.path-bridge');
+
+            if (mode === 'all') {
+                ragEls.forEach(el => el.style.opacity = '1');
+                bridgeEls.forEach(el => el.style.opacity = '1');
+                selectNode('orchestration');
+            } else if (mode === 'rag') {
+                ragEls.forEach(el => el.style.opacity = '1');
+                bridgeEls.forEach(el => el.style.opacity = '0.35');
+                selectNode('knowledge');
+            } else if (mode === 'bridge') {
+                ragEls.forEach(el => el.style.opacity = '0.35');
+                bridgeEls.forEach(el => el.style.opacity = '1');
+                selectNode('bridge');
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // 3. Tab 2: 目录结构树数据与交互渲染
+        // ---------------------------------------------------------------------
+        const repoTreeData = {
+            name: 'wanchain-agent/',
+            type: 'folder',
+            desc: 'Monorepo 根目录，统一管理核心运行时代码（src）、自动化测试（tests）以及一等公民离线评测大盘（evaluation）。',
+            rule: 'Monorepo 原子化提交，确保代码改动与评测集强同步',
+            children: [
+                {
+                    name: 'pyproject.toml',
+                    type: 'file',
+                    desc: '项目依赖与构建配置。通过分组（main / dev / eval）隔离核心运行时依赖与重型评测框架（DeepEval/RAGAS）。',
+                    rule: '依赖组隔离，生产镜像不安装 eval 组依赖'
+                },
+                {
+                    name: 'src/wanchain_agent/',
+                    type: 'folder',
+                    desc: '核心应用源码包，严格遵循六边形架构（Ports & Adapters）。',
+                    rule: '单向依赖：内部模块依赖 core，外部实现收口于 adapters',
+                    children: [
+                        {
+                            name: 'core/',
+                            type: 'folder',
+                            desc: '领域核心层（Domain Core），定义全系统通用的数据结构、接口协议与异常体系。',
+                            rule: '零外部框架依赖（仅允许 Python 标准库与 Pydantic）',
+                            children: [
+                                { name: 'models.py', type: 'file', desc: '核心 Pydantic 模型：RoutingDecision, TxPreview, UnsignedTxPayload, EvalCase 等。', rule: '强类型数据契约，供全项目及 evaluation 共享' },
+                                { name: 'ports.py', type: 'file', desc: '使用 typing.Protocol 定义抽象端口：LLMPort, KnowledgePort, BridgePort, TracePort。', rule: '依赖倒置接口，解耦业务逻辑与第三方 SDK' },
+                                { name: 'errors.py', type: 'file', desc: '业务领域异常定义（如 UnsupportedChainError, LowConfidenceError, GuardrailBlockedError）。', rule: '统一语义化错误处理' }
+                            ]
+                        },
+                        {
+                            name: 'routing/',
+                            type: 'folder',
+                            desc: '意图路由层（纯逻辑），负责将用户输入精准分流至知识问答或跨链流程。',
+                            rule: '仅依赖 core/，通过 LLMPort 调用大模型',
+                            children: [
+                                { name: 'rules.py', type: 'file', desc: '正则与关键词硬匹配规则，毫秒级拦截高频明确请求。', rule: '确定性纯函数' },
+                                { name: 'classifier.py', type: 'file', desc: '基于 LLMPort + Pydantic AI 结构化输出，识别复杂意图与提取跨链槽位。', rule: '结构化输出强制约束' },
+                                { name: 'router.py', type: 'file', desc: '组合路由管道：规则匹配 → LLM 分类 → 低置信度触发澄清反问。', rule: '无状态分流器' }
+                            ]
+                        },
+                        {
+                            name: 'knowledge/',
+                            type: 'folder',
+                            desc: 'RAG 知识检索与问答流，消费 Wanchain 官方 .md 文档库。',
+                            rule: '依赖 KnowledgePort 与 LLMPort',
+                            children: [
+                                { name: 'pipeline.py', type: 'file', desc: '执行向量检索 → 重排（Rerank）→ 生成带文档引用的准确回答。', rule: '标准化 RAG 流水线' },
+                                { name: 'guard.py', type: 'file', desc: '边界拒答防护，当检索相关性不足或存在幻觉风险时主动拒答。', rule: 'Web3 金融级准确性防线' }
+                            ]
+                        },
+                        {
+                            name: 'bridge/',
+                            type: 'folder',
+                            desc: '跨链交易处理核心逻辑，包含参数校验、费用模拟与交易预览生成。',
+                            rule: '纯逻辑与 BridgePort 抽象调用，绝不接触私钥',
+                            children: [
+                                { name: 'validator.py', type: 'file', desc: '纯函数逻辑校验：验证源链/目标链支持度、代币精度、地址格式与最小限额。', rule: '100% 确定性纯函数' },
+                                { name: 'simulator.py', type: 'file', desc: '调用 BridgePort 模拟跨链执行，计算预估到账金额与网络 Gas 费。', rule: '只读模拟，无链上状态变更' },
+                                { name: 'preview.py', type: 'file', desc: '组装人类可读的 TxPreview 交易预览对象，供前端渲染确认卡片。', rule: '信息透明化展示' },
+                                { name: 'workflow.py', type: 'file', desc: '定义跨链子流程的状态机节点逻辑。', rule: '配合 LangGraph interrupt 暂停' }
+                            ]
+                        },
+                        {
+                            name: 'orchestration/',
+                            type: 'folder',
+                            desc: '基于 LangGraph 的全局工作流编排与状态管理中枢。',
+                            rule: '全局控制流调度，支持状态持久化与人工介入中断',
+                            children: [
+                                { name: 'state.py', type: 'file', desc: '定义 GraphState 全局状态结构，配置 Upstash Redis Checkpointer 持久化。', rule: '有状态会话管理' },
+                                { name: 'nodes.py', type: 'file', desc: 'LangGraph 节点函数，作为薄封装调用 routing、knowledge、bridge 业务模块。', rule: '薄封装（Thin Wrapper），不包含重业务逻辑' },
+                                { name: 'graph.py', type: 'file', desc: '编译状态图：组装节点、条件边（Conditional Edges）与跨链 interrupt 确认点。', rule: '核心状态机拓扑定义' }
+                            ]
+                        },
+                        {
+                            name: 'adapters/',
+                            type: 'folder',
+                            desc: '六边形架构外围适配器层，实现 core/ports.py 定义的所有外部交互接口。',
+                            rule: '所有第三方 SDK 与网络 I/O 均隔离在此目录',
+                            children: [
+                                { name: 'llm_openai.py', type: 'file', desc: '实现 LLMPort，对接 OpenAI / DeepSeek 等兼容接口。', rule: '可配置替换模型提供商' },
+                                { name: 'knowledge_haystack.py', type: 'file', desc: '实现 KnowledgePort，基于 Haystack / LlamaIndex + Chroma/FAISS 检索 .md 文档。', rule: '轻量嵌入式 RAG，零额外数据库运维' },
+                                { name: 'bridge_wanchain.py', type: 'file', desc: '实现 BridgePort，使用原生 httpx 封装 Wanchain createTx 与状态轮询接口。', rule: '去掉冗余中间件，原生轻量可控' },
+                                { name: 'trace_langfuse.py', type: 'file', desc: '实现 TracePort，异步上报链路轨迹与 Token 指标至 Langfuse Cloud。', rule: '非阻塞异步遥测' },
+                                { name: 'signer_external.py', type: 'file', desc: '仅生成待签名交易载荷（UnsignedTxPayload），交由前端外部钱包签名。', rule: '严守非托管安全底线，绝不接触私钥' }
+                            ]
+                        },
+                        { name: 'config.py', type: 'file', desc: '基于 Pydantic Settings 的环境变量管理与适配器依赖注入装配。', rule: '配置驱动架构' },
+                        { name: 'app.py', type: 'file', desc: 'FastAPI Web 服务入口，提供 REST API 与 SSE 流式聊天端点。', rule: '异步高并发网关' }
+                    ]
+                },
+                {
+                    name: 'tests/',
+                    type: 'folder',
+                    desc: '传统软件工程自动化测试套件（Pytest）。',
+                    rule: 'CI 必过门禁',
+                    children: [
+                        { name: 'unit/', type: 'file', desc: '单元测试，仅依赖 core + 内存 Fake 适配器，毫秒级运行。', rule: '无外部网络依赖' },
+                        { name: 'integration/', type: 'file', desc: '集成测试，验证真实适配器与 Wanchain 测试网沙箱的连通性。', rule: '沙箱环境隔离' },
+                        { name: 'e2e/', type: 'file', desc: '端到端 API 与 LangGraph 状态流转测试。', rule: '完整链路验证' }
+                    ]
+                },
+                {
+                    name: 'evaluation/',
+                    type: 'folder',
+                    desc: '顶级独立 AI 质量评测工程（一等公民），与 src/ 同级隔离。',
+                    rule: '单向依赖 src/ 模型，严禁反向被 src/ 导入',
+                    children: [
+                        { name: 'datasets/', type: 'file', desc: '版本化管理的 Golden Datasets（路由测试集、RAG 问答集、对抗攻击集）。', rule: '随代码 PR 原子化演进' },
+                        { name: 'router_eval.py', type: 'file', desc: '基于 DeepEval 评估意图分类准确率与跨链槽位抽取 F1 值。', rule: '量化路由精度' },
+                        { name: 'rag_eval.py', type: 'file', desc: '基于 RAGAS 评估回答忠实度（Faithfulness）与边界拒答准确率。', rule: '防幻觉质量门禁' },
+                        { name: 'trajectory_eval.py', type: 'file', desc: 'Agent 轨迹断言：验证跨链流程是否 100% 触发 interrupt 确认，绝不绕过安全拦截。', rule: '安全红线自动化审计' }
+                    ]
+                },
+                {
+                    name: 'evals/',
+                    type: 'folder',
+                    desc: '离线评测运行生成的历史报告与对比基准产物（JSON / HTML）。',
+                    rule: '用于版本迭代回归对比'
+                }
+            ]
+        };
+
+        function renderTreeNode(node, level = 0) {
+            const isFolder = node.type === 'folder';
+            const paddingLeft = level * 18;
+            const icon = isFolder 
+                ? '<i class="fa-solid fa-folder-open text-amber-400 mr-2 folder-icon"></i>' 
+                : '<i class="fa-regular fa-file-code text-cyan-400 mr-2"></i>';
+            
+            const nodeId = 'tree-' + Math.random().toString(36).substr(2, 9);
+            const safeData = encodeURIComponent(JSON.stringify({
+                name: node.name,
+                desc: node.desc,
+                rule: node.rule
+            }));
+
+            let html = `
+                <div class="select-none">
+                    <div onclick="handleTreeClick('${nodeId}', '${safeData}', ${isFolder})" 
+                         style="padding-left: ${paddingLeft}px"
+                         class="py-1.5 px-2 rounded-lg hover:bg-slate-800/80 cursor-pointer flex items-center justify-between group transition">
+                        <div class="flex items-center">
+                            ${isFolder ? `<i class="fa-solid fa-chevron-down text-[10px] text-slate-500 mr-1.5 transition-transform chevron-icon" id="chev-${nodeId}"></i>` : '<span class="w-3.5 inline-block"></span>'}
+                            ${icon}
+                            <span class="${isFolder ? 'text-slate-100 font-semibold' : 'text-slate-300 group-hover:text-cyan-300'}">${node.name}</span>
+                        </div>
+                        <span class="text-[11px] text-slate-500 hidden sm:inline truncate max-w-[220px]">${node.desc.split('，')[0]}</span>
+                    </div>
+            `;
+
+            if (isFolder && node.children) {
+                html += `<div id="children-${nodeId}" class="folder-children">`;
+                node.children.forEach(child => {
+                    html += renderTreeNode(child, level + 1);
+                });
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        function handleTreeClick(nodeId, encodedData, isFolder) {
+            const data = JSON.parse(decodeURIComponent(encodedData));
+            document.getElementById('file-detail-name').textContent = data.name;
+            document.getElementById('file-detail-desc').textContent = data.desc;
+            document.getElementById('file-detail-rule').textContent = data.rule;
+
+            if (isFolder) {
+                const childrenEl = document.getElementById(`children-${nodeId}`);
+                const chevEl = document.getElementById(`chev-${nodeId}`);
+                if (childrenEl) {
+                    childrenEl.classList.toggle('hidden');
+                    if (chevEl) {
+                        chevEl.style.transform = childrenEl.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)';
+                    }
+                }
+            }
+        }
+
+        function toggleAllFolders(expand) {
+            document.querySelectorAll('.folder-children').forEach(el => {
+                if (expand) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+            document.querySelectorAll('.chevron-icon').forEach(el => {
+                el.style.transform = expand ? 'rotate(0deg)' : 'rotate(-90deg)';
+            });
+        }
+
+        // ---------------------------------------------------------------------
+        // 4. Tab 3: 全开源免费技术栈对照表渲染
+        // ---------------------------------------------------------------------
+        const techStackList = [
+            {
+                layer: '编排与路由状态机',
+                tool: 'LangGraph (Python)',
+                path: 'src/.../orchestration/',
+                deploy: '随 FastAPI 容器托管',
+                desc: '管理多步状态流转、条件边分发，以及跨链前的 interrupt() 人工确认挂起机制。'
+            },
+            {
+                layer: '意图路由分类',
+                tool: 'Pydantic AI / Instructor + 正则规则',
+                path: 'src/.../routing/',
+                deploy: '内置 Python 进程',
+                desc: '规则优先毫秒匹配 + LLM 结构化 JSON Schema 分类与槽位抽取。'
+            },
+            {
+                layer: '知识层 (RAG)',
+                tool: 'Haystack / LlamaIndex + Chroma/FAISS',
+                path: 'src/.../knowledge/',
+                deploy: '本地嵌入向量库 (零服务器开销)',
+                desc: '直接消费 Wanchain .md 文档库，避开 RAGFlow 依赖的 ES/MySQL 重型运维成本。'
+            },
+            {
+                layer: '跨链交易构建',
+                tool: '原生 httpx 封装 Wanchain createTx',
+                path: 'src/.../adapters/bridge_wanchain.py',
+                deploy: '直连 Wanchain 官方 API',
+                desc: '去掉 layerhop 等复杂中间件，原生轻量封装，返回未签名交易载荷。'
+            },
+            {
+                layer: '跨链状态追踪',
+                tool: 'Wanchain Status Query / OrbitWan MCP',
+                path: 'src/.../adapters/bridge_wanchain.py',
+                deploy: '只读异步轮询',
+                desc: '交易广播后持续追踪跨链桥确认状态。'
+            },
+            {
+                layer: '签名与广播 (安全)',
+                tool: '用户外部钱包 (浏览器钱包 / 硬件钱包)',
+                path: 'src/.../adapters/signer_external.py',
+                deploy: '客户端浏览器执行',
+                desc: 'Agent 绝不接触私钥，严格遵循 Web3 非托管安全原则。'
+            },
+            {
+                layer: '后端 API 网关',
+                tool: 'FastAPI (Python 异步框架)',
+                path: 'src/.../app.py',
+                deploy: 'Render (Free Tier) 或 Hugging Face Spaces (Docker 16G RAM)',
+                desc: '提供高并发 REST API 与 SSE 流式响应。'
+            },
+            {
+                layer: '前端 WebChat UI',
+                tool: 'Next.js / Vite + React',
+                path: 'frontend/ (独立或同级目录)',
+                deploy: 'Vercel / Netlify (永久免费 CDN)',
+                desc: '渲染对话流、TxPreview 预览卡片及拉起钱包签名。'
+            },
+            {
+                layer: '状态持久化存储',
+                tool: 'Upstash Redis (Serverless)',
+                path: 'src/.../orchestration/state.py',
+                deploy: 'Upstash 免费额度 (每日万级请求)',
+                desc: '托管 LangGraph Checkpointer 的多轮会话与断点状态。'
+            },
+            {
+                layer: '可观测性与追踪',
+                tool: 'Langfuse + OpenTelemetry',
+                path: 'src/.../adapters/trace_langfuse.py',
+                deploy: 'Langfuse Cloud (Hobby 免费层)',
+                desc: '零成本收集生产环境 LLM 轨迹、延迟与 Token 消耗。'
+            },
+            {
+                layer: '离线质量评测大盘',
+                tool: 'DeepEval + RAGAS',
+                path: 'evaluation/ (顶级目录)',
+                deploy: '本地运行 / GitHub Actions (公开库免费)',
+                desc: '自动化评测路由准确率、RAG Faithfulness 及轨迹断言。'
+            }
+        ];
+
+        function renderTechStackTable() {
+            const tbody = document.getElementById('tech-stack-tbody');
+            tbody.innerHTML = techStackList.map(item => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-3.5 px-4 font-semibold text-white whitespace-nowrap">${item.layer}</td>
+                    <td class="py-3.5 px-4 text-cyan-300 font-medium">${item.tool}</td>
+                    <td class="py-3.5 px-4 font-mono text-xs text-purple-300 whitespace-nowrap">${item.path}</td>
+                    <td class="py-3.5 px-4">
+                        <span class="px-2.5 py-1 rounded-md text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 inline-block">
+                            ${item.deploy}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-slate-400 text-xs leading-relaxed">${item.desc}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ---------------------------------------------------------------------
+        // 5. Tab 4: LangGraph 执行轨迹模拟器
+        // ---------------------------------------------------------------------
+        const simulationScenarios = {
+            rag: {
+                name: '场景 A：知识问答',
+                steps: [
+                    {
+                        node: 'FastAPI (app.py) → Orchestration (graph.py)',
+                        action: '接收用户输入并初始化 GraphState，从 Upstash Redis 加载会话上下文。',
+                        status: 'RUNNING',
+                        state: {
+                            session_id: "sess_98a7f",
+                            messages: [{ role: "user", content: "Wanchain 的跨链桥采用什么共识机制？" }],
+                            routing_decision: null,
+                            rag_context: null,
+                            next_node: "router_node"
+                        }
+                    },
+                    {
+                        node: 'Router Node (routing/router.py)',
+                        action: 'rules.py 未命中交易关键词，交由 classifier.py 识别为知识问答意图 (rag)，置信度 0.96。',
+                        status: 'ROUTED -> RAG',
+                        state: {
+                            session_id: "sess_98a7f",
+                            messages: [{ role: "user", content: "Wanchain 的跨链桥采用什么共识机制？" }],
+                            routing_decision: { intent: "rag", confidence: 0.96, slots: {} },
+                            next_node: "knowledge_node"
+                        }
+                    },
+                    {
+                        node: 'Orchestration 条件边 → Knowledge Node (knowledge/pipeline.py)',
+                        action: 'Orchestration 根据 intent=="rag" 自动调度知识节点，调用 Haystack 检索 Wanchain .md 文档库。',
+                        status: 'RETRIEVING',
+                        state: {
+                            session_id: "sess_98a7f",
+                            routing_decision: { intent: "rag", confidence: 0.96 },
+                            rag_context: [
+                                { doc: "wanchain_bridge_arch.md", score: 0.91, snippet: "Wanchain 采用去中心化 Storeman 节点组与安全多方计算（sMPC）..." }
+                            ],
+                            next_node: "guard_check"
+                        }
+                    },
+                    {
+                        node: 'Guardrails 检查 & 生成 (knowledge/guard.py)',
+                        action: '上下文相关性得分 0.91 (> 0.75 阈值)，通过防幻觉检查，生成带引用的回答并通过 SSE 流式返回。',
+                        status: 'COMPLETED',
+                        state: {
+                            session_id: "sess_98a7f",
+                            guard_passed: true,
+                            final_answer: "Wanchain 跨链桥基于去中心化 Storeman 节点组，结合安全多方计算（sMPC）与门限密钥共享技术实现资产跨链...",
+                            langfuse_trace_id: "tr_rag_001"
+                        }
+                    }
+                ]
+            },
+            bridge: {
+                name: '场景 B：跨链交易 (含 Interrupt)',
+                steps: [
+                    {
+                        node: 'FastAPI (app.py) → Orchestration (graph.py)',
+                        action: '接收跨链指令，初始化 GraphState 并交由编排引擎调度。',
+                        status: 'RUNNING',
+                        state: {
+                            session_id: "sess_bridge_42",
+                            messages: [{ role: "user", content: "帮我把 100 USDT 从 Ethereum 跨链到 BSC" }],
+                            routing_decision: null,
+                            tx_preview: null
+                        }
+                    },
+                    {
+                        node: 'Router Node (routing/rules.py + classifier.py)',
+                        action: '命中“跨链”规则并由 LLM 抽取结构化槽位：{from: "ETH", to: "BSC", token: "USDT", amount: 100}。',
+                        status: 'ROUTED -> BRIDGE',
+                        state: {
+                            session_id: "sess_bridge_42",
+                            routing_decision: {
+                                intent: "bridge",
+                                confidence: 0.99,
+                                slots: { from_chain: "ETH", to_chain: "BSC", token: "USDT", amount: 100 }
+                            },
+                            next_node: "bridge_workflow"
+                        }
+                    },
+                    {
+                        node: 'Bridge 校验与模拟 (validator.py → simulator.py → preview.py)',
+                        action: '纯函数校验通过 → 调用 httpx 封装的 Wanchain createTx 获取未签名交易 → 生成 TxPreview。',
+                        status: 'PREVIEW_READY',
+                        state: {
+                            session_id: "sess_bridge_42",
+                            tx_preview: {
+                                route: "Ethereum -> BSC",
+                                send: "100 USDT",
+                                bridge_fee: "0.5 USDT",
+                                estimated_receive: "99.5 USDT",
+                                unsigned_tx: { to: "0xWanBridge...", data: "0xa9059cbb..." }
+                            },
+                            next_node: "human_approval_interrupt"
+                        }
+                    },
+                    {
+                        node: 'Orchestration 触发 interrupt() 冻结状态！',
+                        action: '【关键安全拦截】LangGraph 暂停执行并将状态持久化至 Upstash Redis，前端弹出交易确认与钱包签名按钮。',
+                        status: 'INTERRUPTED (等待钱包签名)',
+                        state: {
+                            session_id: "sess_bridge_42",
+                            checkpoint_saved: "upstash_redis://ckpt_42",
+                            interrupt_reason: "REQUIRE_USER_WALLET_SIGNATURE",
+                            private_key_held_by_agent: false
+                        }
+                    },
+                    {
+                        node: '用户钱包签名广播 → 状态追踪 (bridge_wanchain.py)',
+                        action: '用户在前端浏览器钱包确认签名并广播交易，唤醒 LangGraph 恢复执行，httpx 只读轮询跨链确认状态。',
+                        status: 'COMPLETED',
+                        state: {
+                            session_id: "sess_bridge_42",
+                            tx_hash: "0x8f3c...91b2",
+                            bridge_status: "SUCCESS_MINTED_ON_BSC",
+                            langfuse_trace_id: "tr_bridge_099"
+                        }
+                    }
+                ]
+            }
+        };
+
+        let currentScenarioKey = 'rag';
+        let currentStepIdx = 0;
+
+        function loadScenario(key) {
+            currentScenarioKey = key;
+            currentStepIdx = 0;
+
+            // 按钮样式切换
+            const btnRag = document.getElementById('sim-btn-rag');
+            const btnBridge = document.getElementById('sim-btn-bridge');
+            if (key === 'rag') {
+                btnRag.className = 'px-3.5 py-2 rounded-xl text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition';
+                btnBridge.className = 'px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+            } else {
+                btnBridge.className = 'px-3.5 py-2 rounded-xl text-xs font-medium bg-amber-500/20 text-amber-300 border border-amber-500/40 transition';
+                btnRag.className = 'px-3.5 py-2 rounded-xl text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition';
+            }
+
+            renderSimulation();
+        }
+
+        function renderSimulation() {
+            const scenario = simulationScenarios[currentScenarioKey];
+            const total = scenario.steps.length;
+            const currentStep = scenario.steps[currentStepIdx];
+
+            document.getElementById('sim-step-counter').textContent = `${currentStepIdx + 1} / ${total}`;
+            document.getElementById('btn-prev-step').disabled = currentStepIdx === 0;
+            document.getElementById('btn-next-step').disabled = currentStepIdx === total - 1;
+
+            // 渲染左侧步骤卡片
+            const listEl = document.getElementById('sim-steps-list');
+            listEl.innerHTML = scenario.steps.map((step, idx) => {
+                const isActive = idx === currentStepIdx;
+                const isPast = idx < currentStepIdx;
+                let borderStyle = 'border-slate-800 bg-slate-900/40 opacity-60';
+                if (isActive) borderStyle = 'border-cyan-500 bg-cyan-950/20 shadow-lg shadow-cyan-500/10 opacity-100';
+                else if (isPast) borderStyle = 'border-slate-700 bg-slate-900/80 opacity-90';
+
+                return `
+                    <div onclick="jumpToStep(${idx})" class="cursor-pointer p-3.5 rounded-xl border ${borderStyle} transition-all duration-200">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-mono font-semibold ${isActive ? 'text-cyan-400' : 'text-slate-400'}">
+                                STEP ${idx + 1}: ${step.node}
+                            </span>
+                            ${isActive ? '<span class="px-2 py-0.5 text-[10px] font-mono rounded bg-cyan-500/20 text-cyan-300">当前执行</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">${step.action}</p>
+                    </div>
+                `;
+            }).join('');
+
+            // 渲染右侧 JSON 快照
+            const statusEl = document.getElementById('sim-state-status');
+            statusEl.textContent = currentStep.status;
+            statusEl.className = currentStep.status.includes('INTERRUPTED') 
+                ? 'text-rose-400 font-bold animate-pulse' 
+                : 'text-emerald-400 font-semibold';
+
+            document.getElementById('sim-state-json').textContent = JSON.stringify(currentStep.state, null, 2);
+        }
+
+        function nextStep() {
+            const total = simulationScenarios[currentScenarioKey].steps.length;
+            if (currentStepIdx < total - 1) {
+                currentStepIdx++;
+                renderSimulation();
+            }
+        }
+
+        function prevStep() {
+            if (currentStepIdx > 0) {
+                currentStepIdx--;
+                renderSimulation();
+            }
+        }
+
+        function jumpToStep(idx) {
+            currentStepIdx = idx;
+            renderSimulation();
+        }
+
+        function resetSim() {
+            currentStepIdx = 0;
+            renderSimulation();
+        }
+
+        // ---------------------------------------------------------------------
+        // 页面初始化
+        // ---------------------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            // 默认选中 Orchestration 节点展示详情
+            selectNode('orchestration');
+            // 渲染目录树
+            document.getElementById('directory-tree-container').innerHTML = renderTreeNode(repoTreeData);
+            // 渲染技术栈表
+            renderTechStackTable();
+            // 初始化轨迹模拟器
+            loadScenario('rag');
+        });
+    </script>
+</body>
+</html>
