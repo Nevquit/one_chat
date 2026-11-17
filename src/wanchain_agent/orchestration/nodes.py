@@ -11,10 +11,12 @@ from __future__ import annotations
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from functools import wraps
 from typing import Any
 
+from wanchain_agent.bridge.preview import build_preview, is_expired
+from wanchain_agent.bridge.simulator import simulate
+from wanchain_agent.bridge.validator import validate_slots
 from wanchain_agent.core.errors import (
     AgentError,
     BridgeValidationError,
@@ -167,7 +169,9 @@ def make_guard_node(deps: NodeDeps, *, min_score: float) -> NodeFn:
 def make_bridge_validate_node(deps: NodeDeps) -> NodeFn:
     async def bridge_validate(state: GraphState) -> dict[str, Any]:
         with deps.trace.span("bridge_validate", session_id=state.get("session_id", "")):
-            check = await deps.bridge.validate_route(_slots(state))
+            slots = _slots(state)
+            validate_slots(slots)
+            check = await deps.bridge.validate_route(slots)
             if not check.supported:
                 raise BridgeValidationError(check.reason or "该跨链路由不受支持")
             return {}
@@ -178,7 +182,7 @@ def make_bridge_validate_node(deps: NodeDeps) -> NodeFn:
 def make_bridge_simulate_node(deps: NodeDeps) -> NodeFn:
     async def bridge_simulate(state: GraphState) -> dict[str, Any]:
         with deps.trace.span("bridge_simulate", session_id=state.get("session_id", "")):
-            simulation = await deps.bridge.simulate(_slots(state))
+            simulation = await simulate(_slots(state), deps.bridge)
             return {"simulation": simulation.model_dump(mode="json")}
 
     return bridge_simulate
@@ -190,17 +194,7 @@ def make_bridge_preview_node(deps: NodeDeps) -> NodeFn:
             slots = _slots(state)
             simulation = SimulationResult.model_validate(state["simulation"])
             payload = await deps.bridge.build_unsigned_tx(slots)
-            preview = TxPreview(
-                from_chain=slots.from_chain,
-                to_chain=slots.to_chain,
-                token=slots.token,
-                amount=slots.amount,
-                bridge_fee=simulation.bridge_fee,
-                estimated_receive=simulation.estimated_receive,
-                estimated_gas=simulation.estimated_gas,
-                unsigned_payload=payload,
-                expires_at=simulation.expires_at,
-            )
+            preview = build_preview(slots, simulation, payload)
             return {"tx_preview": preview.model_dump(mode="json")}
 
     return bridge_preview
@@ -214,7 +208,7 @@ def make_await_approval_node(deps: NodeDeps) -> NodeFn:
             preview = TxPreview.model_validate(state["tx_preview"])
             decision = interrupt({"type": "tx_preview", "data": state["tx_preview"]})
             # 恢复时先校验过期，再采信用户决定；过期预览一律作废重来
-            if datetime.now(UTC) >= preview.expires_at:
+            if is_expired(preview):
                 raise PreviewExpiredError("交易预览已过期，请重新发起跨链")
             approval = decision if isinstance(decision, dict) else {}
             if not approval.get("approved"):
