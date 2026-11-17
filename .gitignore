@@ -6,3 +6,6 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .env
+
+# RAG 离线构建产物（chunks.jsonl / manifest.json）
+data/

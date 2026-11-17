@@ -240,6 +240,25 @@ class Citation(BaseModel):
     score: float
 
 
+class Chunk(BaseModel):
+    """离线切分产物。``char_start`` / ``char_end`` 指向清洗后文档的字符区间。
+
+    ``heading_path`` 用 ``" > "`` 连接标题层级；``token_count`` 是估算值，
+    仅供切分与成本控制使用，不是模型真实计费 token 数。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    chunk_id: str = Field(min_length=1)
+    doc_id: str = Field(min_length=1)
+    source_path: str = Field(min_length=1)
+    heading_path: str = ""
+    text: str = Field(min_length=1)
+    char_start: int = Field(ge=0)
+    char_end: int = Field(ge=0)
+    token_count: int = Field(ge=1)
+
+
 class RAGResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
