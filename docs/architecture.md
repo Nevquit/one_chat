@@ -269,8 +269,10 @@ class GraphState(TypedDict, total=False):
     routing_decision: dict | None     # 路由结果
     rag_context: list[dict] | None    # 检索片段（含引用）
     guard_passed: bool | None         # 拒答判定
+    simulation: dict | None           # 费用与到账模拟（组装预览前暂存）
     tx_preview: dict | None           # 交易预览
     approval: dict | None             # 用户确认结果
+    clarification: str | None         # 澄清问题
     tx_hash: str | None               # 广播后哈希
     bridge_status: str | None         # 跨链状态
     trace_id: str | None
