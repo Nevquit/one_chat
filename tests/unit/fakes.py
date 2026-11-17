@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
@@ -14,6 +15,7 @@ from typing import Any, TypeVar
 from wanchain_agent.core.models import (
     BridgeSlots,
     BridgeStatus,
+    Chunk,
     Citation,
     RouteCheck,
     SimulationResult,
@@ -78,6 +80,60 @@ class FakeKnowledge:
 
     async def health(self) -> dict[str, Any]:
         return {"status": "ok", "chunks": len(self.citations)}
+
+
+class FakeEmbedding:
+    """确定性向量：同一文本必得同一向量，维度可配置。"""
+
+    def __init__(
+        self, *, model_name: str = "fake-embedding", dimension: int = 8
+    ) -> None:
+        self._model_name = model_name
+        self._dimension = dimension
+        self.document_calls: list[list[str]] = []
+        self.query_calls: list[str] = []
+
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+    @property
+    def dimension(self) -> int:
+        return self._dimension
+
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        self.document_calls.append(list(texts))
+        return [self._vector(text) for text in texts]
+
+    async def embed_query(self, text: str) -> list[float]:
+        self.query_calls.append(text)
+        return self._vector(text)
+
+    def _vector(self, text: str) -> list[float]:
+        seed = int(hashlib.sha256(text.encode("utf-8")).hexdigest()[:8], 16)
+        return [((seed >> (i % 32)) & 0xFF) / 255.0 for i in range(self._dimension)]
+
+
+class FakeVectorIndex:
+    """内存索引。``write`` 与真实实现一致，采用全量覆盖语义。"""
+
+    def __init__(self) -> None:
+        self.writes: list[dict[str, Any]] = []
+        self._ids: list[str] = []
+        self.closed = False
+
+    def write(self, chunks: list[Chunk], vectors: list[list[float]]) -> int:
+        self.writes.append(
+            {"chunks": list(chunks), "vectors": [list(vector) for vector in vectors]}
+        )
+        self._ids = [chunk.chunk_id for chunk in chunks]
+        return len(chunks)
+
+    def count(self) -> int:
+        return len(self._ids)
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class FakeBridge:

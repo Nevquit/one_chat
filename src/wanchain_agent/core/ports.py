@@ -12,6 +12,7 @@ from typing import Any, Protocol, TypeVar, runtime_checkable
 from .models import (
     BridgeSlots,
     BridgeStatus,
+    Chunk,
     Citation,
     RouteCheck,
     SimulationResult,
@@ -48,6 +49,36 @@ class KnowledgePort(Protocol):
     async def retrieve(self, query: str, top_k: int = 5) -> list[Citation]: ...
 
     async def health(self) -> dict[str, Any]: ...
+
+
+@runtime_checkable
+class EmbeddingPort(Protocol):
+    """文本向量化。query 与文档必须使用同一模型、同一维度。
+
+    ``dimension`` 由实现方声明，建库时用它校验向量长度；
+    ``model_name`` 会写入索引清单，启动时与配置比对。
+    """
+
+    @property
+    def model_name(self) -> str: ...
+
+    @property
+    def dimension(self) -> int: ...
+
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]: ...
+
+    async def embed_query(self, text: str) -> list[float]: ...
+
+
+@runtime_checkable
+class VectorIndexPort(Protocol):
+    """向量索引写入。``write`` 负责全量重建，保证索引与传入片段一一对应。"""
+
+    def write(self, chunks: list[Chunk], vectors: list[list[float]]) -> int: ...
+
+    def count(self) -> int: ...
+
+    def close(self) -> None: ...
 
 
 @runtime_checkable

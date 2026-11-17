@@ -8,8 +8,22 @@ import asyncio
 
 import pytest
 
-from wanchain_agent.core.ports import BridgePort, KnowledgePort, LLMPort, TracePort
-from tests.unit.fakes import FakeBridge, FakeKnowledge, FakeLLM, FakeTrace
+from wanchain_agent.core.ports import (
+    BridgePort,
+    EmbeddingPort,
+    KnowledgePort,
+    LLMPort,
+    TracePort,
+    VectorIndexPort,
+)
+from tests.unit.fakes import (
+    FakeBridge,
+    FakeEmbedding,
+    FakeKnowledge,
+    FakeLLM,
+    FakeTrace,
+    FakeVectorIndex,
+)
 
 
 @pytest.mark.parametrize(
@@ -19,6 +33,8 @@ from tests.unit.fakes import FakeBridge, FakeKnowledge, FakeLLM, FakeTrace
         (FakeKnowledge, KnowledgePort),
         (FakeBridge, BridgePort),
         (FakeTrace, TracePort),
+        (FakeEmbedding, EmbeddingPort),
+        (FakeVectorIndex, VectorIndexPort),
     ],
 )
 def test_fake_satisfies_port(fake, port):

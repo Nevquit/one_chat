@@ -4,7 +4,8 @@
 ``Settings`` 允许缺少 ``LLM_API_KEY``（便于测试与健康检查），
 真正构造 LLM 适配器时由 ``build_adapters`` 统一校验并抛 ``ConfigError``。
 
-知识层适配器依赖离线索引，暂由调用方注入；这里只装配 LLM、Bridge 与追踪。
+知识层适配器依赖离线索引，暂由调用方注入；这里装配 LLM、Bridge、追踪，
+并为离线建库提供 Embedding 适配器（向量库由 ``indexing`` 组合根装配）。
 """
 
 from __future__ import annotations
@@ -17,11 +18,11 @@ from typing import Any
 from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from .adapters import bridge_wanchain, llm_openai
+from .adapters import bridge_wanchain, embedding_siliconflow, llm_openai
 from .adapters.trace_noop import NoopTrace
 from .app import create_app
 from .core.errors import ConfigError
-from .core.ports import BridgePort, KnowledgePort, LLMPort, TracePort
+from .core.ports import BridgePort, EmbeddingPort, KnowledgePort, LLMPort, TracePort
 from .knowledge.guard import DEFAULT_MIN_RELEVANCE
 
 
@@ -33,6 +34,14 @@ class Settings(BaseModel):
     llm_api_key: str = ""
     llm_api_base: str = llm_openai.DEFAULT_BASE_URL
     llm_model: str = llm_openai.DEFAULT_MODEL
+    embedding_api_key: str = ""
+    embedding_api_base: str = embedding_siliconflow.DEFAULT_BASE_URL
+    embedding_model: str = embedding_siliconflow.DEFAULT_MODEL
+    embedding_dimension: int = Field(
+        default=embedding_siliconflow.DEFAULT_DIMENSION, ge=1
+    )
+    chroma_path: str = "data/chroma"
+    chroma_collection: str = "wanchain_docs"
     bridge_api_base: str = bridge_wanchain.DEFAULT_BASE_URL
     bridge_from_account: str | None = None
     min_relevance: float = Field(default=DEFAULT_MIN_RELEVANCE, ge=0.0, le=1.0)
@@ -44,6 +53,20 @@ class Settings(BaseModel):
             "llm_api_key": source.get("LLM_API_KEY", ""),
             "llm_api_base": source.get("LLM_API_BASE", llm_openai.DEFAULT_BASE_URL),
             "llm_model": source.get("LLM_MODEL", llm_openai.DEFAULT_MODEL),
+            # 兼容 SiliconFlow 官方文档里的变量名。
+            "embedding_api_key": source.get("EMBEDDING_API_KEY")
+            or source.get("SILICONFLOW_API_KEY", ""),
+            "embedding_api_base": source.get(
+                "EMBEDDING_API_BASE", embedding_siliconflow.DEFAULT_BASE_URL
+            ),
+            "embedding_model": source.get(
+                "EMBEDDING_MODEL", embedding_siliconflow.DEFAULT_MODEL
+            ),
+            "embedding_dimension": source.get(
+                "EMBEDDING_DIMENSION", embedding_siliconflow.DEFAULT_DIMENSION
+            ),
+            "chroma_path": source.get("CHROMA_PATH", "data/chroma"),
+            "chroma_collection": source.get("CHROMA_COLLECTION", "wanchain_docs"),
             "bridge_api_base": source.get(
                 "BRIDGE_API_BASE", bridge_wanchain.DEFAULT_BASE_URL
             ),
@@ -90,6 +113,22 @@ def build_adapters(settings: Settings | None = None) -> Adapters:
             from_account=resolved.bridge_from_account,
         ),
         trace=NoopTrace(),
+    )
+
+
+def build_embedding(settings: Settings | None = None) -> EmbeddingPort:
+    """按配置构造 Embedding 适配器。密钥缺失直接失败，不做静默降级。"""
+    resolved = settings or Settings.from_env()
+    if not resolved.embedding_api_key:
+        raise ConfigError(
+            "缺少 EMBEDDING_API_KEY（或 SILICONFLOW_API_KEY），无法初始化 Embedding 适配器"
+        )
+
+    return embedding_siliconflow.SiliconFlowEmbedding(
+        api_key=resolved.embedding_api_key,
+        base_url=resolved.embedding_api_base,
+        model=resolved.embedding_model,
+        dimension=resolved.embedding_dimension,
     )
 
 
