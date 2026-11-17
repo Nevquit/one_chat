@@ -23,11 +23,11 @@ from wanchain_agent.core.errors import (
 )
 from wanchain_agent.core.models import (
     BridgeSlots,
-    RoutingDecision,
     SimulationResult,
     TxPreview,
 )
 from wanchain_agent.core.ports import BridgePort, KnowledgePort, LLMPort, TracePort
+from wanchain_agent.routing.router import route
 
 from .state import GraphState
 
@@ -35,12 +35,6 @@ DEFAULT_MIN_RELEVANCE = 0.5
 
 REFUSAL_TEXT = "抱歉，官方文档中没有找到足够相关的依据，我无法可靠回答这个问题。"
 CANCELLED_TEXT = "已取消本次跨链操作，没有生成任何待签名交易。"
-
-ROUTER_SYSTEM_PROMPT = (
-    "你是 Wanchain 助手的意图路由器。把用户请求分类为 rag（文档问答）、"
-    "bridge（跨链转账）或 clarify（信息不足需追问），并抽取跨链槽位。"
-    "只输出结构化结果，不要解释。"
-)
 
 CLARIFY_SYSTEM_PROMPT = (
     "你是 Wanchain 助手。用户想发起跨链转账但槽位不完整，"
@@ -124,13 +118,7 @@ def make_entry_node(deps: NodeDeps) -> NodeFn:
 def make_router_node(deps: NodeDeps) -> NodeFn:
     async def router(state: GraphState) -> dict[str, Any]:
         with deps.trace.span("router", session_id=state.get("session_id", "")):
-            decision = await deps.llm.complete_structured(
-                [
-                    {"role": "system", "content": ROUTER_SYSTEM_PROMPT},
-                    {"role": "user", "content": _last_user_content(state)},
-                ],
-                RoutingDecision,
-            )
+            decision = await route(_last_user_content(state), deps.llm)
             return {"routing_decision": decision.model_dump(mode="json")}
 
     return router
