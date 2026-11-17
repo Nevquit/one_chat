@@ -3,13 +3,21 @@
 from __future__ import annotations
 
 import asyncio
+import json
 
 import pytest
 
 from wanchain_agent.adapters.bridge_wanchain import WanchainBridgeAdapter
 from wanchain_agent.adapters.embedding_siliconflow import SiliconFlowEmbedding
+from wanchain_agent.adapters.knowledge_chroma import ChromaKnowledge
 from wanchain_agent.adapters.llm_openai import OpenAICompatibleLLM
-from wanchain_agent.config import Adapters, Settings, build_adapters, build_embedding
+from wanchain_agent.config import (
+    Adapters,
+    Settings,
+    build_adapters,
+    build_embedding,
+    build_knowledge,
+)
 from wanchain_agent.core.errors import ConfigError
 
 
@@ -24,6 +32,7 @@ def test_settings_defaults_when_env_is_empty():
     assert settings.embedding_dimension == 1024
     assert settings.chroma_path == "data/chroma"
     assert settings.chroma_collection == "wanchain_docs"
+    assert settings.index_manifest_path == "data/processed/index_manifest.json"
     assert settings.bridge_from_account is None
     assert settings.min_relevance == 0.5
 
@@ -40,6 +49,7 @@ def test_settings_reads_all_overrides():
             "EMBEDDING_DIMENSION": "512",
             "CHROMA_PATH": "tmp/chroma",
             "CHROMA_COLLECTION": "test_docs",
+            "INDEX_MANIFEST_PATH": "tmp/index_manifest.json",
             "BRIDGE_API_BASE": "https://bridge.test",
             "BRIDGE_FROM_ACCOUNT": "0x" + "2" * 40,
             "MIN_RELEVANCE": "0.7",
@@ -55,6 +65,7 @@ def test_settings_reads_all_overrides():
     assert settings.embedding_dimension == 512
     assert settings.chroma_path == "tmp/chroma"
     assert settings.chroma_collection == "test_docs"
+    assert settings.index_manifest_path == "tmp/index_manifest.json"
     assert settings.bridge_api_base == "https://bridge.test"
     assert settings.bridge_from_account == "0x" + "2" * 40
     assert settings.min_relevance == 0.7
@@ -118,3 +129,26 @@ def test_build_embedding_wires_real_implementation():
     assert embedding.model_name == "BAAI/bge-m3"
     assert embedding.dimension == 1024
     asyncio.run(embedding.aclose())
+
+
+def test_build_knowledge_requires_api_key():
+    with pytest.raises(ConfigError):
+        build_knowledge(Settings())
+
+
+def test_build_knowledge_wires_real_implementation(tmp_path):
+    manifest = tmp_path / "index_manifest.json"
+    manifest.write_text(
+        json.dumps({"embedding": {"model_name": "BAAI/bge-m3", "dimension": 1024}}),
+        encoding="utf-8",
+    )
+    knowledge = build_knowledge(
+        Settings(
+            embedding_api_key="sf-test",
+            chroma_path=str(tmp_path / "chroma"),
+            index_manifest_path=str(manifest),
+        )
+    )
+
+    assert isinstance(knowledge, ChromaKnowledge)
+    asyncio.run(knowledge.aclose())
