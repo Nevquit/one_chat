@@ -3,10 +3,11 @@
 只做薄封装，业务规则留在 ``routing/``、``knowledge/``、``bridge/``。
 """
 
+from wanchain_agent.knowledge.guard import DEFAULT_MIN_RELEVANCE
+
 from .graph import build_graph
 from .nodes import (
     CANCELLED_TEXT,
-    DEFAULT_MIN_RELEVANCE,
     REFUSAL_TEXT,
     NodeDeps,
 )

@@ -20,9 +20,9 @@ from langgraph.graph.state import CompiledStateGraph
 
 from wanchain_agent.core.models import BridgeSlots
 from wanchain_agent.core.ports import BridgePort, KnowledgePort, LLMPort, TracePort
+from wanchain_agent.knowledge.guard import DEFAULT_MIN_RELEVANCE
 
 from .nodes import (
-    DEFAULT_MIN_RELEVANCE,
     NodeDeps,
     catching,
     make_await_approval_node,

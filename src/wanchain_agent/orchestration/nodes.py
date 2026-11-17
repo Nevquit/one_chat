@@ -25,17 +25,17 @@ from wanchain_agent.core.errors import (
 )
 from wanchain_agent.core.models import (
     BridgeSlots,
+    Citation,
     SimulationResult,
     TxPreview,
 )
 from wanchain_agent.core.ports import BridgePort, KnowledgePort, LLMPort, TracePort
+from wanchain_agent.knowledge.guard import REFUSAL_TEXT, guard_passed
+from wanchain_agent.knowledge.pipeline import retrieve
 from wanchain_agent.routing.router import route
 
 from .state import GraphState
 
-DEFAULT_MIN_RELEVANCE = 0.5
-
-REFUSAL_TEXT = "抱歉，官方文档中没有找到足够相关的依据，我无法可靠回答这个问题。"
 CANCELLED_TEXT = "已取消本次跨链操作，没有生成任何待签名交易。"
 
 CLARIFY_SYSTEM_PROMPT = (
@@ -150,7 +150,7 @@ def make_clarify_node(deps: NodeDeps) -> NodeFn:
 def make_knowledge_node(deps: NodeDeps) -> NodeFn:
     async def knowledge_retrieve(state: GraphState) -> dict[str, Any]:
         with deps.trace.span("knowledge_retrieve", session_id=state.get("session_id", "")):
-            citations = await deps.knowledge.retrieve(_last_user_content(state), top_k=5)
+            citations = await retrieve(_last_user_content(state), deps.knowledge)
             return {"rag_context": [item.model_dump(mode="json") for item in citations]}
 
     return knowledge_retrieve
@@ -159,9 +159,10 @@ def make_knowledge_node(deps: NodeDeps) -> NodeFn:
 def make_guard_node(deps: NodeDeps, *, min_score: float) -> NodeFn:
     async def guard(state: GraphState) -> dict[str, Any]:
         with deps.trace.span("guard", session_id=state.get("session_id", "")):
-            context = state.get("rag_context") or []
-            top_score = max((float(item.get("score", 0.0)) for item in context), default=0.0)
-            return {"guard_passed": bool(context) and top_score >= min_score}
+            context = [
+                Citation.model_validate(item) for item in state.get("rag_context") or []
+            ]
+            return {"guard_passed": guard_passed(context, min_score=min_score)}
 
     return guard
 
