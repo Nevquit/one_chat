@@ -15,7 +15,8 @@ RUN apt-get update \
 
 COPY pyproject.toml ./
 COPY src ./src
-RUN pip install .
+ARG PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install --index-url "$PIP_INDEX_URL" .
 
 # 索引随镜像打包，运行期只做检索；重建索引后需要重新构建镜像
 COPY data ./data
