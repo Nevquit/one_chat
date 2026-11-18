@@ -1,0 +1,50 @@
+{"case_id":"router-001","input":"Wanchain 的 Storeman 是什么？","expected":{"intent":"rag","slots":{}},"tags":["rag","docs"]}
+{"case_id":"router-002","input":"Storeman 节点如何保证跨链安全？","expected":{"intent":"rag","slots":{}},"tags":["rag","crosschain-term"]}
+{"case_id":"router-003","input":"WanBridge 是什么？","expected":{"intent":"rag","slots":{}},"tags":["rag","bridge-term"]}
+{"case_id":"router-004","input":"How does WanBridge work?","expected":{"intent":"rag","slots":{}},"tags":["rag","english"]}
+{"case_id":"router-005","input":"ETH 和 BSC 在 Wanchain 里有什么区别？","expected":{"intent":"rag","slots":{}},"tags":["rag","chain-names"]}
+{"case_id":"router-006","input":"如何查询跨链交易状态？","expected":{"intent":"rag","slots":{}},"tags":["rag","crosschain-term"]}
+{"case_id":"router-007","input":"Wanchain 支持哪些链？","expected":{"intent":"rag","slots":{}},"tags":["rag"]}
+{"case_id":"router-008","input":"跨链手续费怎么计算？","expected":{"intent":"rag","slots":{}},"tags":["rag","crosschain-term"]}
+{"case_id":"router-009","input":"What is a locked account?","expected":{"intent":"rag","slots":{}},"tags":["rag","english"]}
+{"case_id":"router-010","input":"解释 sMPC 的原理","expected":{"intent":"rag","slots":{}},"tags":["rag"]}
+{"case_id":"router-011","input":"Wanchain 和 Chainlink 有什么区别？","expected":{"intent":"rag","slots":{}},"tags":["rag"]}
+{"case_id":"router-012","input":"怎么部署 bridge node？","expected":{"intent":"rag","slots":{}},"tags":["rag","bridge-term"]}
+{"case_id":"router-013","input":"What does the WAN token do?","expected":{"intent":"rag","slots":{}},"tags":["rag","english","token-name"]}
+{"case_id":"router-014","input":"Wanchain Explorer 是什么？","expected":{"intent":"rag","slots":{}},"tags":["rag"]}
+{"case_id":"router-015","input":"如何成为 Storeman？","expected":{"intent":"rag","slots":{}},"tags":["rag"]}
+{"case_id":"router-016","input":"跨链需要多长时间？","expected":{"intent":"rag","slots":{}},"tags":["rag","crosschain-term"]}
+{"case_id":"router-017","input":"介绍一下 Galaxy Consensus","expected":{"intent":"rag","slots":{}},"tags":["rag"]}
+{"case_id":"router-018","input":"What are the bridge fees?","expected":{"intent":"rag","slots":{}},"tags":["rag","english","bridge-term"]}
+{"case_id":"router-019","input":"文档里有没有关于 NFT 跨链的说明？","expected":{"intent":"rag","slots":{}},"tags":["rag","crosschain-term"]}
+{"case_id":"router-020","input":"把 100 USDT 从 ETH 跨到 BSC","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete"]}
+{"case_id":"router-021","input":"把 50 USDC 从 BSC 跨到 ETH","expected":{"intent":"bridge","slots":{"from_chain":"BSC","to_chain":"ETH","token":"USDC","amount":"50"}},"tags":["bridge","complete"]}
+{"case_id":"router-022","input":"跨链 200 WAN 从 WAN 到 ETH","expected":{"intent":"bridge","slots":{"from_chain":"WAN","to_chain":"ETH","token":"WAN","amount":"200"}},"tags":["bridge","complete","token-chain-overlap"]}
+{"case_id":"router-023","input":"把 1.5 USDT 从 Ethereum 跨到 BNB Chain","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"1.5"}},"tags":["bridge","complete","decimal"]}
+{"case_id":"router-024","input":"Bridge 100 USDT from Ethereum to BSC","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete","english"]}
+{"case_id":"router-025","input":"把 100 USDT 从币安链跨到以太坊","expected":{"intent":"bridge","slots":{"from_chain":"BSC","to_chain":"ETH","token":"USDT","amount":"100"}},"tags":["bridge","complete","alias"]}
+{"case_id":"router-026","input":"从 BSC 跨 100 USDT 到 WAN","expected":{"intent":"bridge","slots":{"from_chain":"BSC","to_chain":"WAN","token":"USDT","amount":"100"}},"tags":["bridge","complete"]}
+{"case_id":"router-027","input":"把 100 USDT 从 ETH 跨到 BSC，收款地址 0x1111111111111111111111111111111111111111","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete","recipient"]}
+{"case_id":"router-028","input":"从 ETH 跨链转 100 USDT 到 BSC","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete"]}
+{"case_id":"router-029","input":"把 100 USDT 从 ETH 跨入 BSC","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete"]}
+{"case_id":"router-030","input":"把 100 USDT 从 WAN 跨到 BSC","expected":{"intent":"bridge","slots":{"from_chain":"WAN","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete"]}
+{"case_id":"router-031","input":"Bridge 25 USDC from BNB Chain to Wanchain","expected":{"intent":"bridge","slots":{"from_chain":"BSC","to_chain":"WAN","token":"USDC","amount":"25"}},"tags":["bridge","complete","english"]}
+{"case_id":"router-032","input":"把 1000 USDT 从 ETH 跨到 BSC","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"1000"}},"tags":["bridge","complete"]}
+{"case_id":"router-033","input":"把 100 USDT 从以太坊跨到币安智能链","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete","alias"]}
+{"case_id":"router-034","input":"转 100 USDT 从 ETH 到 BSC","expected":{"intent":"bridge","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["bridge","complete","no-bridge-keyword"]}
+{"case_id":"router-035","input":"帮我把 100 USDT 跨到 BSC","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["clarify","missing-from"]}
+{"case_id":"router-036","input":"把 100 USDT 从 ETH 跨到 Polygon","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":null,"token":"USDT","amount":"100"}},"tags":["clarify","unknown-chain"]}
+{"case_id":"router-037","input":"跨链 100 USDT（从 ETH）","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":null,"token":"USDT","amount":"100"}},"tags":["clarify","missing-to"]}
+{"case_id":"router-038","input":"从 ETH 跨到 BSC","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":"BSC","token":null,"amount":null}},"tags":["clarify","missing-token-amount"]}
+{"case_id":"router-039","input":"把 USDT 从 ETH 跨到 BSC","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":null}},"tags":["clarify","missing-amount"]}
+{"case_id":"router-040","input":"把 100 从 ETH 跨到 BSC","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":"BSC","token":null,"amount":"100"}},"tags":["clarify","missing-token"]}
+{"case_id":"router-041","input":"把 100 USDT 从 ETH 跨到 ETH","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":null,"token":"USDT","amount":"100"}},"tags":["clarify","same-chain"]}
+{"case_id":"router-042","input":"把 0 USDT 从 ETH 跨到 BSC","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":"BSC","token":"USDT","amount":null}},"tags":["clarify","zero-amount"]}
+{"case_id":"router-043","input":"跨链 100 到 BSC","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":"BSC","token":null,"amount":"100"}},"tags":["clarify","missing-from-token"]}
+{"case_id":"router-044","input":"把 100 USDT 跨到","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":null,"token":"USDT","amount":"100"}},"tags":["clarify","missing-chains"]}
+{"case_id":"router-045","input":"Bridge 100 USDT to BSC","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["clarify","english","missing-from"]}
+{"case_id":"router-046","input":"从 BSC 跨到 ETH，金额待定","expected":{"intent":"clarify","slots":{"from_chain":"BSC","to_chain":"ETH","token":null,"amount":null}},"tags":["clarify","missing-token-amount"]}
+{"case_id":"router-047","input":"跨链 100 USDT 从以太坊到未知链","expected":{"intent":"clarify","slots":{"from_chain":"ETH","to_chain":null,"token":"USDT","amount":"100"}},"tags":["clarify","unknown-chain"]}
+{"case_id":"router-048","input":"转 100 USDT 到 BSC","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["clarify","rules-miss","missing-from"]}
+{"case_id":"router-049","input":"Move 10 USDC to Ethereum","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":"ETH","token":"USDC","amount":"10"}},"tags":["clarify","rules-miss","english","missing-from"]}
+{"case_id":"router-050","input":"I want to send 100 USDT to BSC","expected":{"intent":"clarify","slots":{"from_chain":null,"to_chain":"BSC","token":"USDT","amount":"100"}},"tags":["clarify","rules-miss","english","missing-from"]}

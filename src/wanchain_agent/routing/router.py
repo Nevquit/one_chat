@@ -16,7 +16,8 @@ CLASSIFIER_SYSTEM_PROMPT = (
     "bridge（跨链转账）或 clarify（信息不足需追问）。"
     "抽取跨链槽位：from_chain / to_chain 只能取 ETH、BSC、WAN，"
     "token 只能取 USDT、USDC、WAN，amount 用十进制数字字符串。"
-    "严禁编造用户没有给出的参数。"
+    "严禁编造用户没有给出的参数：用户没有明确说出的链、代币、金额一律留空，"
+    "不要用 Wanchain 或任何默认值补全。"
 )
 
 

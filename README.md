@@ -71,3 +71,16 @@ docker compose up -d --build
 - `.env` 含密钥，已加入 `.gitignore` 和 `.dockerignore`。
 - 语料或切分参数变化后，需要本地重建 `data/` 并重新构建镜像。
 - Docker 命令需要当前用户在 `docker` 组，或使用 `sudo`。
+
+## 离线评测
+
+```powershell
+# 确定性规则基线，零 token 成本
+.\.venv\Scripts\python.exe -m evaluation.router_eval --mode rules
+
+# 完整路由（规则 + LLM），需要 LLM_API_KEY
+.\.venv\Scripts\python.exe -m evaluation.router_eval --mode llm
+```
+
+报告写入 `evals/`，记录数据集哈希、模型名、语料哈希与 git commit。
+门禁：意图准确率 ≥ 0.90、槽位 F1 ≥ 0.85、澄清准确率 ≥ 0.85。

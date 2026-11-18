@@ -1,0 +1,105 @@
+{
+  "generated_at": "2026-11-18T06:46:31.719962+00:00",
+  "mode": "rules",
+  "model": null,
+  "git_commit": "4d85576fd28e0acec8d42ad65e4df47ebe2cd3e3",
+  "dataset": {
+    "path": "evaluation\\datasets\\router_cases.jsonl",
+    "sha256": "9d6f6d0f233534658cb51f8eea7a5b648b2b6258076111ba77f9aa477eda10f7",
+    "case_count": 50
+  },
+  "index": {
+    "manifest": "data\\processed\\manifest.json",
+    "corpus_sha256": "d58c2fe73c693864bfd6b9b2f4a6c82355f7e03f292879cac6ea6867a0dd0535",
+    "corpus_git_commit": "21e8ec0175f5e2e8fe3bff09291e284c03b97b7b",
+    "chunk_count": 662
+  },
+  "metrics": {
+    "intent_accuracy": 0.94,
+    "slot_precision": 0.98989898989899,
+    "slot_recall": 0.9423076923076923,
+    "slot_f1": 0.9655172413793104,
+    "clarify_accuracy": 0.9032258064516129
+  },
+  "counts": {
+    "intent_correct": 47,
+    "intent_total": 50,
+    "slot_tp": 98,
+    "slot_fp": 1,
+    "slot_fn": 6,
+    "clarify_correct": 28,
+    "clarify_total": 31
+  },
+  "gates": {
+    "intent_accuracy": {
+      "threshold": 0.9,
+      "passed": true
+    },
+    "slot_f1": {
+      "threshold": 0.85,
+      "passed": true
+    },
+    "clarify_accuracy": {
+      "threshold": 0.85,
+      "passed": true
+    }
+  },
+  "passed": true,
+  "failures": [
+    {
+      "case_id": "router-048",
+      "input": "转 100 USDT 到 BSC",
+      "expected_intent": "clarify",
+      "predicted_intent": "unknown",
+      "slot_diff": {
+        "to_chain": {
+          "expected": "BSC",
+          "predicted": null
+        },
+        "token": {
+          "expected": "USDT",
+          "predicted": null
+        },
+        "amount": {
+          "expected": "100",
+          "predicted": null
+        }
+      },
+      "error": null
+    },
+    {
+      "case_id": "router-049",
+      "input": "Move 10 USDC to Ethereum",
+      "expected_intent": "clarify",
+      "predicted_intent": "unknown",
+      "slot_diff": {
+        "to_chain": {
+          "expected": "ETH",
+          "predicted": null
+        },
+        "token": {
+          "expected": "USDC",
+          "predicted": null
+        },
+        "amount": {
+          "expected": "10",
+          "predicted": null
+        }
+      },
+      "error": null
+    },
+    {
+      "case_id": "router-050",
+      "input": "I want to send 100 USDT to BSC",
+      "expected_intent": "clarify",
+      "predicted_intent": "bridge",
+      "slot_diff": {
+        "from_chain": {
+          "expected": null,
+          "predicted": "WAN"
+        }
+      },
+      "error": null
+    }
+  ]
+}
