@@ -95,7 +95,7 @@ def test_health_reports_knowledge_status():
     assert response.json()["knowledge"]["status"] == "ok"
 
 
-def test_rag_chat_streams_token_event():
+def test_rag_chat_streams_token_and_citations():
     app, _, knowledge, _ = _make_app(
         _rag_decision(), responses=["Wanchain 通过 Storeman 完成跨链。"]
     )
@@ -105,8 +105,23 @@ def test_rag_chat_streams_token_event():
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
-    assert _parse_sse(response.text) == [
-        {"event": "token", "data": {"text": "Wanchain 通过 Storeman 完成跨链。"}}
+    events = _parse_sse(response.text)
+    assert events == [
+        {"event": "token", "data": {"text": "Wanchain 通过 Storeman 完成跨链。"}},
+        {
+            "event": "citations",
+            "data": {
+                "citations": [
+                    {
+                        "doc_id": "bridge_architecture",
+                        "source_path": "docs/bridge/architecture.md",
+                        "heading_path": "Bridge > Architecture > Storeman",
+                        "snippet": "Wanchain 采用 Storeman 节点组与 sMPC 实现跨链。",
+                        "score": 0.91,
+                    }
+                ]
+            },
+        },
     ]
     assert knowledge.queries == [("Storeman 是什么？", 5)]
 

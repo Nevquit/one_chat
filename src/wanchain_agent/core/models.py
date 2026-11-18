@@ -117,7 +117,7 @@ class SSEEvent(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    event: Literal["token", "tx_preview", "interrupt", "error"]
+    event: Literal["token", "citations", "tx_preview", "interrupt", "error"]
     data: dict[str, Any] = Field(default_factory=dict)
 
 

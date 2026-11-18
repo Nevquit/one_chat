@@ -10,6 +10,7 @@
 | 事件 | 触发时机 | ``data`` |
 |---|---|---|
 | ``token`` | 本轮生成完毕 | ``{"text": 回答文本}`` |
+| ``citations`` | RAG 回答通过相关性守卫 | ``{"citations": [Citation, ...]}`` |
 | ``tx_preview`` | 进入人工确认 | ``{"preview": TxPreview}`` |
 | ``interrupt`` | 同一时刻的暂停信号 | ``{"session_id": ..., "type": "tx_preview"}`` |
 | ``error`` | 领域异常被捕获 | ``{"code": ..., "message": ..., "details": ...}`` |
@@ -93,9 +94,21 @@ def _state_events(state: dict[str, Any], *, session_id: str) -> list[SSEEvent]:
 
     messages = state.get("messages") or []
     last = messages[-1] if messages else None
-    if last and last.get("role") == "assistant":
-        return [SSEEvent(event="token", data={"text": str(last.get("content", ""))})]
-    return []
+    if not last or last.get("role") != "assistant":
+        return []
+
+    events = [SSEEvent(event="token", data={"text": str(last.get("content", ""))})]
+    citations = _citations(state)
+    if citations:
+        events.append(SSEEvent(event="citations", data={"citations": citations}))
+    return events
+
+
+def _citations(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """只在 RAG 分支且相关性守卫通过时返回引用，避免把拒答上下文推给前端。"""
+    if not state.get("guard_passed"):
+        return []
+    return list(state.get("rag_context") or [])
 
 
 async def _stream(
