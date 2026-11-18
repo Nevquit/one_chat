@@ -1,0 +1,9 @@
+.venv
+.git
+.env
+corpus
+tests
+.pytest_cache
+.ruff_cache
+**/__pycache__
+data/chroma/chroma.sqlite3-journal
