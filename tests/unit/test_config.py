@@ -100,29 +100,29 @@ def test_invalid_checkpointer_raises_config_error():
         Settings.from_env({"CHECKPOINTER": "postgres"})
 
 
-def test_settings_reads_upstash_checkpoint_configuration():
+def test_settings_reads_redis_url_alias():
     settings = Settings.from_env(
         {
             "CHECKPOINTER": "redis",
-            "UPSTASH_REDIS_URL": "rediss://example.upstash.io:6379",
+            "REDIS_URL": "redis://localhost:6379/0",
             "CHECKPOINT_TTL_MINUTES": "60",
         }
     )
 
     assert settings.checkpointer == "redis"
-    assert settings.checkpoint_url == "rediss://example.upstash.io:6379"
+    assert settings.checkpoint_url == "redis://localhost:6379/0"
     assert settings.checkpoint_ttl_minutes == 60
 
 
-def test_checkpoint_url_takes_precedence_over_upstash_alias():
+def test_checkpoint_url_takes_precedence_over_redis_url_alias():
     settings = Settings.from_env(
         {
-            "CHECKPOINT_URL": "redis://localhost:6379/0",
-            "UPSTASH_REDIS_URL": "rediss://example.upstash.io:6379",
+            "CHECKPOINT_URL": "redis://primary:6379/0",
+            "REDIS_URL": "redis://alias:6379/0",
         }
     )
 
-    assert settings.checkpoint_url == "redis://localhost:6379/0"
+    assert settings.checkpoint_url == "redis://primary:6379/0"
 
 
 def test_build_checkpointer_defaults_to_memory():

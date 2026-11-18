@@ -83,11 +83,11 @@ class Settings(BaseModel):
             "bridge_from_account": source.get("BRIDGE_FROM_ACCOUNT") or None,
             "min_relevance": source.get("MIN_RELEVANCE", DEFAULT_MIN_RELEVANCE),
             "checkpointer": (source.get("CHECKPOINTER") or "memory").strip().lower(),
-            # 本地 Redis 与 Upstash 都可用；显式 CHECKPOINT_URL 优先级最高。
+            # 必须指向带 RediSearch / RedisJSON 的 Redis 8 或 Redis Stack。
+            # Upstash Redis 使用不兼容的 SEARCH.* 命令，不能用于该检查点。
             "checkpoint_url": (
                 source.get("CHECKPOINT_URL")
                 or source.get("REDIS_URL")
-                or source.get("UPSTASH_REDIS_URL")
                 or ""
             ).strip(),
             "checkpoint_ttl_minutes": source.get("CHECKPOINT_TTL_MINUTES", 1440),
@@ -172,7 +172,7 @@ def build_checkpointer(settings: Settings | None = None) -> BaseCheckpointSaver:
     if resolved.checkpointer == "redis":
         if not resolved.checkpoint_url:
             raise ConfigError(
-                "CHECKPOINTER=redis 需要配置 CHECKPOINT_URL、REDIS_URL 或 UPSTASH_REDIS_URL"
+                "CHECKPOINTER=redis 需要配置 CHECKPOINT_URL 或 REDIS_URL"
             )
         return make_checkpointer(
             redis_url=resolved.checkpoint_url,
