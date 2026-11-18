@@ -84,6 +84,37 @@ def test_rules_answer_documentation_questions():
     assert decision.slots is None
 
 
+def test_rules_route_crosschain_documentation_question_to_rag():
+    decision = match_rules("Storeman 节点是如何保证跨链安全的？")
+
+    assert decision is not None
+    assert decision.intent == "rag"
+
+
+def test_rules_route_bridge_product_question_to_rag():
+    decision = match_rules("How does WanBridge work?")
+
+    assert decision is not None
+    assert decision.intent == "rag"
+
+
+def test_rules_route_chain_comparison_question_to_rag():
+    decision = match_rules("ETH 和 BSC 有什么区别？")
+
+    assert decision is not None
+    assert decision.intent == "rag"
+
+
+def test_rules_still_route_single_chain_transfer_to_bridge():
+    decision = match_rules("帮我把 100 USDT 跨到 BSC")
+
+    assert decision is not None
+    assert decision.intent == "bridge"
+    assert decision.slots is not None
+    assert decision.slots.from_chain is None
+    assert decision.slots.to_chain is ChainId.BSC
+
+
 def test_rules_return_none_for_vague_messages():
     assert match_rules("这个怎么弄") is None
     assert match_rules("随便聊聊") is None

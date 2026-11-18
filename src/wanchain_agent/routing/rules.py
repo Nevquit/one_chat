@@ -62,7 +62,16 @@ def match_rules(message: str) -> RoutingDecision | None:
 
     lowered = text.lower()
     mentions = _extract_chains(text)
-    bridge_signal = any(keyword in lowered for keyword in BRIDGE_KEYWORDS) or len(mentions) >= 2
+    amount, token, _ = _extract_amount(text)
+    transfer_signal = any(keyword in lowered for keyword in BRIDGE_KEYWORDS)
+    has_params = amount is not None or token is not None
+
+    # 只有「转账类关键词 + 交易参数」或「两条链 + 明确转账意图」才算跨链请求。
+    # 否则「Storeman 如何保证跨链安全？」「WanBridge 是什么？」这类文档问题
+    # 会因为出现「跨链 / bridge」而被误送进交易分支。
+    bridge_signal = (
+        len(mentions) >= 2 and (has_params or transfer_signal)
+    ) or (has_params and transfer_signal)
 
     if bridge_signal:
         return RoutingDecision(
