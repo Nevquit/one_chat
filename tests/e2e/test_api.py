@@ -8,6 +8,8 @@ from decimal import Decimal
 from typing import Any
 
 import httpx
+from fastapi.testclient import TestClient
+from langgraph.checkpoint.memory import InMemorySaver
 
 from tests.unit.fakes import FakeBridge, FakeKnowledge, FakeLLM, FakeTrace
 from wanchain_agent.app import create_app
@@ -232,3 +234,34 @@ def test_invalid_chat_request_is_rejected_before_graph_runs():
 
     assert response.status_code == 422
     assert knowledge.queries == []
+
+
+def test_lifespan_prepares_and_closes_checkpointer():
+    class _Checkpointer(InMemorySaver):
+        def __init__(self) -> None:
+            super().__init__()
+            self.setup_called = False
+            self.closed = False
+
+        async def asetup(self) -> None:
+            self.setup_called = True
+
+        async def __aexit__(self, *_args: object) -> None:
+            self.closed = True
+
+    llm = FakeLLM()
+    llm.register_structured(RoutingDecision, _rag_decision())
+    checkpointer = _Checkpointer()
+    app = create_app(
+        llm=llm,
+        knowledge=FakeKnowledge(),
+        bridge=FakeBridge(),
+        trace=FakeTrace(),
+        checkpointer=checkpointer,
+    )
+
+    with TestClient(app):
+        pass
+
+    assert checkpointer.setup_called
+    assert checkpointer.closed

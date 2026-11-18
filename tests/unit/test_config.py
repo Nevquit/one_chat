@@ -6,6 +6,7 @@ import asyncio
 import json
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 
 from wanchain_agent.adapters.bridge_wanchain import WanchainBridgeAdapter
 from wanchain_agent.adapters.embedding_siliconflow import SiliconFlowEmbedding
@@ -15,6 +16,7 @@ from wanchain_agent.config import (
     Adapters,
     Settings,
     build_adapters,
+    build_checkpointer,
     build_embedding,
     build_knowledge,
 )
@@ -35,6 +37,9 @@ def test_settings_defaults_when_env_is_empty():
     assert settings.index_manifest_path == "data/processed/index_manifest.json"
     assert settings.bridge_from_account is None
     assert settings.min_relevance == 0.5
+    assert settings.checkpointer == "memory"
+    assert settings.checkpoint_url == ""
+    assert settings.checkpoint_ttl_minutes == 1440
 
 
 def test_settings_reads_all_overrides():
@@ -88,6 +93,60 @@ def test_embedding_api_key_takes_precedence_over_alias():
 def test_invalid_min_relevance_raises_config_error():
     with pytest.raises(ConfigError):
         Settings.from_env({"MIN_RELEVANCE": "1.5"})
+
+
+def test_invalid_checkpointer_raises_config_error():
+    with pytest.raises(ConfigError):
+        Settings.from_env({"CHECKPOINTER": "postgres"})
+
+
+def test_settings_reads_upstash_checkpoint_configuration():
+    settings = Settings.from_env(
+        {
+            "CHECKPOINTER": "redis",
+            "UPSTASH_REDIS_URL": "rediss://example.upstash.io:6379",
+            "CHECKPOINT_TTL_MINUTES": "60",
+        }
+    )
+
+    assert settings.checkpointer == "redis"
+    assert settings.checkpoint_url == "rediss://example.upstash.io:6379"
+    assert settings.checkpoint_ttl_minutes == 60
+
+
+def test_checkpoint_url_takes_precedence_over_upstash_alias():
+    settings = Settings.from_env(
+        {
+            "CHECKPOINT_URL": "redis://localhost:6379/0",
+            "UPSTASH_REDIS_URL": "rediss://example.upstash.io:6379",
+        }
+    )
+
+    assert settings.checkpoint_url == "redis://localhost:6379/0"
+
+
+def test_build_checkpointer_defaults_to_memory():
+    assert isinstance(build_checkpointer(Settings()), InMemorySaver)
+
+
+def test_build_checkpointer_requires_url_for_redis():
+    with pytest.raises(ConfigError):
+        build_checkpointer(Settings(checkpointer="redis"))
+
+
+def test_build_checkpointer_builds_redis_saver():
+    from langgraph.checkpoint.redis.aio import AsyncRedisSaver
+
+    checkpointer = build_checkpointer(
+        Settings(
+            checkpointer="redis",
+            checkpoint_url="redis://localhost:6379/0",
+            checkpoint_ttl_minutes=60,
+        )
+    )
+
+    assert isinstance(checkpointer, AsyncRedisSaver)
+    assert checkpointer.ttl_config == {"default_ttl": 60, "refresh_on_read": True}
 
 
 def test_build_adapters_requires_api_key():

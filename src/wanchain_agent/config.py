@@ -13,9 +13,10 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from .adapters import bridge_wanchain, embedding_siliconflow, llm_openai
@@ -25,6 +26,7 @@ from .app import create_app
 from .core.errors import ConfigError
 from .core.ports import BridgePort, EmbeddingPort, KnowledgePort, LLMPort, TracePort
 from .knowledge.guard import DEFAULT_MIN_RELEVANCE
+from .orchestration.state import make_checkpointer
 
 
 class Settings(BaseModel):
@@ -47,6 +49,9 @@ class Settings(BaseModel):
     bridge_api_base: str = bridge_wanchain.DEFAULT_BASE_URL
     bridge_from_account: str | None = None
     min_relevance: float = Field(default=DEFAULT_MIN_RELEVANCE, ge=0.0, le=1.0)
+    checkpointer: Literal["memory", "redis"] = "memory"
+    checkpoint_url: str = ""
+    checkpoint_ttl_minutes: int = Field(default=1440, ge=1)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -77,6 +82,15 @@ class Settings(BaseModel):
             ),
             "bridge_from_account": source.get("BRIDGE_FROM_ACCOUNT") or None,
             "min_relevance": source.get("MIN_RELEVANCE", DEFAULT_MIN_RELEVANCE),
+            "checkpointer": (source.get("CHECKPOINTER") or "memory").strip().lower(),
+            # 本地 Redis 与 Upstash 都可用；显式 CHECKPOINT_URL 优先级最高。
+            "checkpoint_url": (
+                source.get("CHECKPOINT_URL")
+                or source.get("REDIS_URL")
+                or source.get("UPSTASH_REDIS_URL")
+                or ""
+            ).strip(),
+            "checkpoint_ttl_minutes": source.get("CHECKPOINT_TTL_MINUTES", 1440),
         }
         try:
             return cls.model_validate(raw)
@@ -148,12 +162,31 @@ def build_knowledge(settings: Settings | None = None) -> KnowledgePort:
     )
 
 
+def build_checkpointer(settings: Settings | None = None) -> BaseCheckpointSaver:
+    """按配置构造会话检查点。
+
+    选择 redis 但缺少连接地址时直接失败，不回退到内存实现：静默降级会让
+    多副本部署看起来正常，实际在实例切换时丢失会话。
+    """
+    resolved = settings or Settings.from_env()
+    if resolved.checkpointer == "redis":
+        if not resolved.checkpoint_url:
+            raise ConfigError(
+                "CHECKPOINTER=redis 需要配置 CHECKPOINT_URL、REDIS_URL 或 UPSTASH_REDIS_URL"
+            )
+        return make_checkpointer(
+            redis_url=resolved.checkpoint_url,
+            ttl_minutes=resolved.checkpoint_ttl_minutes,
+        )
+    return make_checkpointer()
+
+
 def build_app(
     settings: Settings | None = None,
     *,
     knowledge: KnowledgePort | None = None,
 ) -> FastAPI:
-    """生产装配入口：配置 + 知识适配器 → FastAPI 应用。
+    """生产装配入口：配置 + 知识适配器 + 会话检查点 → FastAPI 应用。
 
     ``knowledge`` 省略时按配置构造 Chroma 检索；测试或自定义向量库可直接注入。
     注入的适配器由 ``create_app`` 在应用关闭时统一释放。
@@ -161,11 +194,13 @@ def build_app(
     resolved = settings or Settings.from_env()
     adapters = build_adapters(resolved)
     knowledge = knowledge or build_knowledge(resolved)
+    checkpointer = build_checkpointer(resolved)
     return create_app(
         llm=adapters.llm,
         knowledge=knowledge,
         bridge=adapters.bridge,
         trace=adapters.trace,
         min_relevance=resolved.min_relevance,
+        checkpointer=checkpointer,
         resources=(adapters,),
     )

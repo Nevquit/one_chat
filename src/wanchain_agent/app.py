@@ -169,11 +169,20 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        yield
-        for resource in closables:
-            closer = getattr(resource, "aclose", None)
-            if closer is not None:
-                await closer()
+        setup = getattr(checkpointer, "asetup", None)
+        if setup is not None:
+            await setup()
+        try:
+            yield
+        finally:
+            for resource in closables:
+                closer = getattr(resource, "aclose", None)
+                if closer is not None:
+                    await closer()
+            # 共享检查点（如 Redis）需要释放自身连接，不放进 resources 以免重复关闭
+            exit_context = getattr(checkpointer, "__aexit__", None)
+            if exit_context is not None:
+                await exit_context(None, None, None)
 
     app = FastAPI(title="Wanchain Agent", version="0.1.0", lifespan=lifespan)
 

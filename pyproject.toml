@@ -10,6 +10,7 @@ requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.7,<3",
     "langgraph==1.2.22",
+    "langgraph-checkpoint-redis==0.6.0",
     "httpx==0.28.1",
     "fastapi==0.163.1",
     "uvicorn==0.54.0",
