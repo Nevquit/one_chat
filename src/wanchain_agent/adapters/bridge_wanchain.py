@@ -9,8 +9,8 @@
 
 已知取舍：
 
-- ``fromAccount`` 在官方文档中可选，未配置时不下发，由服务端补全；
-  需要精确 approve 检查时再通过构造参数传入。
+- ``fromAccount`` 是 createTx 的必填字段，未配置时直接抛
+  ``BridgeValidationError``，避免把 400 变成难以定位的 ``upstream`` 错误。
 - ``bridge_fee`` 取 ``amount - receiveAmount`` 的差额，仅当源/目标代币精度
   一致时精确；精度不同时只作展示用途，不作为对账依据。
 - createTx 结果按请求键做短 TTL 缓存，避免同一轮 validate / simulate /
@@ -25,7 +25,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from wanchain_agent.core.errors import (
     BridgeValidationError,
@@ -119,6 +119,16 @@ class _CreateTxData(BaseModel):
     receiveAmount: str
     chainId: int
     feeAndQuota: _FeeAndQuota | None = None
+
+    @field_validator("chainId", mode="before")
+    @classmethod
+    def _parse_chain_id(cls, value: Any) -> Any:
+        """官方接口可能返回 ``"0x1"`` 形式的链 ID。"""
+        if isinstance(value, str):
+            text = value.strip()
+            if text.lower().startswith("0x"):
+                return int(text, 16)
+        return value
 
 
 class _CreateTxResponse(BaseModel):
@@ -260,18 +270,18 @@ class WanchainBridgeAdapter:
             )
         if slots.recipient is None:
             raise BridgeValidationError("缺少收款地址，无法构建跨链交易")
+        if not self._from_account:
+            raise BridgeValidationError("未配置发起账户，无法构建跨链交易")
 
-        body = {
+        return {
             "fromChain": _chain_type(from_chain),
             "toChain": _chain_type(to_chain),
             "fromToken": _token_address(from_chain, token),
             "toToken": _token_address(to_chain, token),
+            "fromAccount": self._from_account,
             "toAccount": slots.recipient,
             "amount": format(amount, "f"),
         }
-        if self._from_account:
-            body["fromAccount"] = self._from_account
-        return body
 
     async def _request(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
         try:

@@ -57,7 +57,13 @@ def _slots(**overrides) -> BridgeSlots:
     return BridgeSlots(**data)
 
 
-def _adapter(payload, *, status: int = 200, requests: list[httpx.Request] | None = None):
+def _adapter(
+    payload,
+    *,
+    status: int = 200,
+    requests: list[httpx.Request] | None = None,
+    from_account: str | None = USER,
+):
     log = requests if requests is not None else []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -68,7 +74,7 @@ def _adapter(payload, *, status: int = 200, requests: list[httpx.Request] | None
         transport=httpx.MockTransport(handler),
         base_url="https://bridge-api.test",
     )
-    return WanchainBridgeAdapter(client=client)
+    return WanchainBridgeAdapter(client=client, from_account=from_account)
 
 
 def test_validate_route_sends_documented_create_tx_payload():
@@ -86,6 +92,7 @@ def test_validate_route_sends_documented_create_tx_payload():
         "toChain": "BNB",
         "fromToken": "0xdac17f958d2ee523a2206206994597c13d831ec7",
         "toToken": "0x55d398326f99059ff775485246999027b3197955",
+        "fromAccount": USER,
         "toAccount": USER,
         "amount": "100",
     }
@@ -127,6 +134,21 @@ def test_create_tx_result_is_cached_within_ttl():
 
     assert result.estimated_receive == Decimal("99.5")
     assert len(requests) == 1
+
+
+def test_missing_from_account_is_validation_error():
+    adapter = _adapter(CREATE_TX_OK, from_account=None)
+
+    with pytest.raises(BridgeValidationError, match="发起账户"):
+        asyncio.run(adapter.validate_route(_slots()))
+
+
+def test_hex_chain_id_is_parsed():
+    payload = json.loads(json.dumps(CREATE_TX_OK))
+    payload["data"]["chainId"] = "0x38"
+    adapter = _adapter(payload)
+
+    assert asyncio.run(adapter.build_unsigned_tx(_slots())).chain_id == 56
 
 
 def test_upstream_failure_surfaces_error():

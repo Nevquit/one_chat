@@ -13,9 +13,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import hashlib
 import json
-import subprocess
 import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -23,6 +21,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from evaluation.report import git_commit as _git_commit
+from evaluation.report import index_info as _index_info
+from evaluation.report import sha256_file as _sha256_file
 from wanchain_agent.core.errors import ConfigError
 from wanchain_agent.core.models import BridgeSlots, RoutingDecision
 from wanchain_agent.core.ports import LLMPort
@@ -31,7 +32,6 @@ from wanchain_agent.routing.rules import match_rules
 
 DEFAULT_DATASET = Path("evaluation/datasets/router_cases.jsonl")
 DEFAULT_REPORT_DIR = Path("evals")
-DEFAULT_INDEX_MANIFEST = Path("data/processed/manifest.json")
 
 INTENTS = ("rag", "bridge", "clarify")
 REQUIRED_FIELDS = ("from_chain", "to_chain", "token", "amount")
@@ -432,49 +432,6 @@ def _collect_failures(
             }
         )
     return failures
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(65536), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _index_info() -> dict[str, Any] | None:
-    path = DEFAULT_INDEX_MANIFEST
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    if not isinstance(data, dict):
-        return None
-    corpus = data.get("corpus")
-    if not isinstance(corpus, dict):
-        return None
-    return {
-        "manifest": str(path),
-        "corpus_sha256": corpus.get("sha256"),
-        "corpus_git_commit": corpus.get("git_commit"),
-        "chunk_count": data.get("chunk_count"),
-    }
-
-
-def _git_commit() -> str | None:
-    try:
-        completed = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            check=False,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if completed.returncode != 0:
-        return None
-    return completed.stdout.strip() or None
 
 
 def _print_summary(report: dict[str, Any], path: Path) -> None:
