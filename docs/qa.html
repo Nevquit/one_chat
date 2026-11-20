@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q&amp;A 记录 · Wanchain Agent</title>
+<style>
+:root {
+  --bg: #f6f4ee;
+  --bg2: #ffffff;
+  --ink: #16211d;
+  --muted: #5c6a63;
+  --rule: #dcd8cc;
+  --accent: #0c6b5b;
+  --accent2: #b8692f;
+  --accent-soft: #e7f0ec;
+  --warn-soft: #f7ece2;
+  --code-bg: #14231e;
+  --code-ink: #e9f0eb;
+  --sidebar-w: 236px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  font-size: 15.5px;
+  line-height: 1.78;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+  font-size: 0.86em;
+  background: var(--accent-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  padding: 30px 20px;
+  border-right: 1px solid var(--rule);
+  background: var(--bg);
+  overflow-y: auto;
+  z-index: 10;
+}
+.brand {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.68rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 6px;
+}
+.brand-title { font-size: 1rem; font-weight: 700; line-height: 1.35; margin: 0 0 22px; }
+.toc-label {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.64rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 8px;
+}
+.toc { list-style: none; padding: 0; margin: 0; }
+.toc a {
+  display: block; padding: 6px 0 6px 11px;
+  border-left: 2px solid var(--rule);
+  color: var(--muted); font-size: 0.83rem; line-height: 1.45;
+}
+.toc a:hover { color: var(--accent); border-left-color: var(--accent); text-decoration: none; }
+.toc .num {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.66rem; color: var(--accent2); margin-right: 6px;
+}
+.sidebar-meta {
+  margin-top: 26px; padding-top: 16px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.74rem; color: var(--muted); line-height: 1.6;
+}
+
+/* Main */
+main { margin-left: var(--sidebar-w); padding: 0 44px 90px; }
+.wrap { max-width: 900px; margin: 0 auto; }
+
+.cover { padding: 64px 0 36px; border-bottom: 1px solid var(--rule); }
+.overline {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.7rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+}
+h1 {
+  font-size: clamp(2rem, 4.4vw, 3.1rem);
+  line-height: 1.14; letter-spacing: -0.03em;
+  font-weight: 700; margin: 0 0 16px;
+}
+.lede { font-size: 1rem; color: var(--muted); max-width: 42em; margin: 0 0 22px; }
+.meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.68rem; color: var(--muted);
+  border: 1px solid var(--rule); padding: 4px 10px;
+  border-radius: 999px; background: var(--bg2);
+}
+.chip strong { color: var(--ink); font-weight: 600; }
+
+/* Q&A */
+.qa { padding: 40px 0 12px; border-top: 1px solid var(--rule); }
+.qa:first-of-type { border-top: 0; }
+.qa-head { margin-bottom: 6px; }
+.qno {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.72rem; letter-spacing: 0.1em; color: var(--accent2);
+}
+h2 {
+  font-size: 1.5rem; line-height: 1.3; letter-spacing: -0.01em;
+  margin: 6px 0 18px; font-weight: 700;
+}
+h3 { font-size: 1rem; margin: 26px 0 8px; }
+p { margin: 0 0 12px; }
+ul, ol { margin: 0 0 12px; padding-left: 1.4em; }
+li { margin-bottom: 4px; }
+
+.answer { margin: 0 0 6px; }
+.answer strong { color: var(--ink); }
+
+.callout {
+  background: var(--bg2);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  margin: 16px 0;
+  font-size: 0.9rem;
+}
+.callout.warn { border-left-color: var(--accent2); background: var(--warn-soft); }
+.callout p:last-child { margin-bottom: 0; }
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  padding: 13px 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+pre .c { color: #9fb3a8; }
+pre .k { color: #8fd0b8; }
+pre .s { color: #e3b27a; }
+
+.table-wrap { overflow-x: auto; margin: 14px 0 16px; border: 1px solid var(--rule); background: var(--bg2); }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; }
+th, td { text-align: left; padding: 8px 11px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  background: var(--accent-soft); font-weight: 600;
+  font-size: 0.74rem; color: var(--accent); white-space: nowrap;
+}
+tr:last-child td { border-bottom: 0; }
+td code { font-size: 0.78rem; }
+
+/* Flow diagram */
+.flow {
+  display: flex; align-items: stretch; flex-wrap: wrap;
+  gap: 0; margin: 18px 0 20px;
+  border: 1px solid var(--rule); background: var(--bg2);
+}
+.flow-col { flex: 1 1 150px; padding: 12px 14px; border-right: 1px solid var(--rule); }
+.flow-col:last-child { border-right: 0; }
+.flow-col h4 {
+  font-family: "Cascadia Code", "Consolas", monospace;
+  font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent2); margin: 0 0 8px;
+}
+.flow-col p { font-size: 0.8rem; color: var(--muted); margin: 0; line-height: 1.6; }
+.flow-col p + p { margin-top: 4px; }
+
+footer {
+  margin-top: 44px; padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  font-size: 0.78rem; color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  main { margin-left: 0; padding: 0 20px 60px; }
+  .flow-col { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .flow-col:last-child { border-bottom: 0; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="brand">Wanchain Agent</div>
+  <div class="brand-title">Q&amp;A<br>记录</div>
+  <div class="toc-label">问题</div>
+  <ul class="toc">
+    <li><a href="#q01"><span class="num">Q01</span>session 由谁维护</a></li>
+    <li><a href="#q02"><span class="num">Q02</span>e2e case 字段设计</a></li>
+    <li><a href="#q03"><span class="num">Q03</span>session 生成与语义</a></li>
+    <li><a href="#q04"><span class="num">Q04</span>case 设计逻辑</a></li>
+    <li><a href="#q05"><span class="num">Q05</span>chat 请求调用链路</a></li>
+    <li><a href="#q06"><span class="num">Q06</span>SSE 客户端读取与解析</a></li>
+    <li><a href="#q07"><span class="num">Q07</span>没有标准答案怎么判</a></li>
+    <li><a href="#q08"><span class="num">Q08</span>e2e-01 断言全流程</a></li>
+    <li><a href="#q09"><span class="num">Q09</span>为什么设计事件</a></li>
+    <li><a href="#q10"><span class="num">Q10</span>Agent 都有路由层吗</a></li>
+  </ul>
+  <div class="sidebar-meta">
+    记录项目实现层面的疑问与结论。<br>
+    随讨论持续追加。
+  </div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<header class="cover">
+  <div class="overline">Questions &amp; Answers</div>
+  <h1>实现问题<br>与结论记录</h1>
+  <p class="lede">
+    记录开发与评测过程中反复出现、容易混淆的实现问题。每条给出结论、代码位置与边界条件，
+    便于后续查阅，也避免同一问题重复讨论。
+  </p>
+  <div class="meta-row">
+    <span class="chip"><strong>4</strong> 条记录</span>
+    <span class="chip">语言 <strong>中文</strong></span>
+    <span class="chip">更新 <strong>2026-11-20</strong></span>
+  </div>
+</header>
+
+<article class="qa" id="q01">
+  <div class="qa-head"><span class="qno">Q01</span></div>
+  <h2>每个 case 的 session 是哪个模块负责维护的？</h2>
+
+  <p class="answer">
+    <strong>分两层：评测器决定“用哪个 session”，服务端决定“状态存在哪里”。</strong>
+    两者之间只靠一个字符串 <code>session_id</code> 连接；业务代码里没有会话表。
+  </p>
+
+  <h3>一、评测侧：谁决定 case 用什么 session</h3>
+  <p>
+    <code>evaluation/e2e_eval.py</code> 的 <code>run_case</code> 在函数内新建映射表：
+  </p>
+  <pre><code><span class="c"># run_case 内部，每个 case 一份</span>
+sessions: dict[str, str] = {}
+session_id = sessions.setdefault(
+    turn.session,
+    _session_id(run_prefix, case.case_id, turn.session),
+)</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>机制</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>sessions</code> 在 <code>run_case</code> 内创建</td><td>case 之间天然隔离，跑完即丢</td></tr>
+        <tr><td><code>turn.session</code>（逻辑名）</td><td>数据集里写的 <code>main</code> / <code>a</code> / <code>b</code></td></tr>
+        <tr><td><code>_session_id(prefix, case_id, slot)</code></td><td>生成 <code>f"{prefix}-{case_id}-{slot}"[:64]</code>，带运行前缀，避免跨运行撞车</td></tr>
+        <tr><td><code>setdefault</code></td><td>同一 case 内同名会话只建一次，后续轮次复用，形成多轮连续</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    <code>resume</code> 段用 <code>sessions.get(case.resume.session)</code> 取同一个 ID，
+    因此恢复能接上第 1 轮留下的中断。结论是：<strong>客户端负责命名与复用，不做持久化。</strong>
+  </p>
+
+  <h3>二、服务端：谁真正保存状态</h3>
+  <p>
+    <code>session_id</code> 进入服务端后，唯一用途是作为 LangGraph 的 <code>thread_id</code>：
+  </p>
+  <pre><code><span class="c"># orchestration/state.py</span>
+<span class="k">def</span> thread_config(session_id: str) -&gt; dict[str, Any]:
+    <span class="k">return</span> {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: session_id}}</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>层</th><th>模块</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td>状态结构</td><td><code>orchestration/state.py</code></td><td><code>GraphState</code> 定义可持久化字段；<code>messages</code> 用 <code>add</code> reducer 追加</td></tr>
+        <tr><td>检查点实现</td><td><code>orchestration/state.py</code></td><td>无 Redis 用 <code>InMemorySaver</code>；有 Redis 用 <code>AsyncRedisSaver</code>，TTL 1440 分钟、读取时续期</td></tr>
+        <tr><td>选择逻辑</td><td><code>config.py</code></td><td>按 <code>CHECKPOINTER</code> 环境变量构造检查点</td></tr>
+        <tr><td>生命周期</td><td><code>app.py</code></td><td>lifespan 调 <code>asetup()</code> 建索引，退出时关闭连接</td></tr>
+        <tr><td>恢复校验</td><td><code>app.py</code></td><td><code>graph.aget_state(config)</code>，为空则抛 <code>session_not_found</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    所以「会话」本质上就是<strong>检查点里以 <code>thread_id</code> 为键的一条图状态</strong>，
+    既没有独立的会话表，也没有服务端生成的 session。
+  </p>
+
+  <h3>三、一次请求里 session 的流向</h3>
+  <div class="flow">
+    <div class="flow-col">
+      <h4>e2e_eval</h4>
+      <p>生成 <code>session_id</code></p>
+      <p>等价于 <code>前缀-用例-会话名</code></p>
+    </div>
+    <div class="flow-col">
+      <h4>FastAPI</h4>
+      <p><code>thread_config(sid)</code></p>
+      <p>把 ID 转成图配置</p>
+    </div>
+    <div class="flow-col">
+      <h4>LangGraph</h4>
+      <p>按 <code>thread_id</code> 读写状态</p>
+      <p>执行节点并回写</p>
+    </div>
+    <div class="flow-col">
+      <h4>Checkpointer</h4>
+      <p>Redis 或内存</p>
+      <p>按 ID 存取、按 TTL 过期</p>
+    </div>
+  </div>
+
+  <h3>四、两个值得注意的边界</h3>
+  <div class="callout">
+    <p><strong>多副本部署必须用 Redis。</strong>
+    <code>InMemorySaver</code> 是进程内实现，<code>/chat/resume</code> 若落到另一台实例会查不到会话，直接返回 404。</p>
+  </div>
+  <div class="callout warn">
+    <p><strong>session_id 由客户端提供，服务端不做身份绑定。</strong>
+    目前没有鉴权，知道 ID 就能访问对应会话；多用户场景下这是需要补的安全项，
+    评测里也没有覆盖（<code>e2e-15</code> 只测隔离，不测越权）。</p>
+  </div>
+
+  <p>
+    一句话总结：<strong>评测器维护「会话名到 ID 的映射」，服务端用 ID 当 <code>thread_id</code>，
+    真正的状态由 checkpointer 维护。</strong>
+  </p>
+</article>
+
+<article class="qa" id="q02">
+  <div class="qa-head"><span class="qno">Q02</span></div>
+  <h2>e2e case 的字段是怎么设计的？</h2>
+
+  <p class="answer">
+    一个 case 描述的是<strong>「发几轮消息、每轮期望什么、是否还要恢复」</strong>，不是一次请求。
+    顶层只有 7 个键，复杂的是 <code>turns</code>、<code>expect</code>、<code>resume</code> 三层嵌套。
+  </p>
+
+  <h3>一、顶层字段</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>必填</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>case_id</code></td><td>是</td><td>唯一编号，重复会直接报错</td></tr>
+        <tr><td><code>category</code></td><td>是</td><td>分类，只用于报告分组，不参与断言</td></tr>
+        <tr><td><code>turns</code></td><td>是</td><td>要依次发送的一串用户消息</td></tr>
+        <tr><td><code>expect</code></td><td>否</td><td>与 <code>turns</code> 逐轮对应的期望，默认空</td></tr>
+        <tr><td><code>resume</code></td><td>否</td><td>中断后的一次恢复请求</td></tr>
+        <tr><td><code>status</code></td><td>否</td><td><code>active</code>（默认）或 <code>pending</code></td></tr>
+        <tr><td><code>note</code></td><td>否</td><td>设计说明或已知偏差，会原样带进报告</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>二、turns 的三种写法</h3>
+  <pre><code><span class="c">// 1. 裸字符串：单轮，默认会话 main</span>
+"turns": ["Wanchain 是什么？"]
+
+<span class="c">// 2. 对象：显式指定会话</span>
+"turns": [{"session": "a", "message": "Wanchain 是什么？"}]
+
+<span class="c">// 3. 混合：同一 case 内多会话交叉</span>
+"turns": [
+  "第一轮",
+  {"session": "b", "message": "另一条会话"},
+  "第三轮"
+]</code></pre>
+
+  <p>
+    解析时字符串和对象都接受，<code>message</code> 必须非空并会 <code>strip()</code>；
+    <code>session</code> 缺省为 <code>main</code>。它只是逻辑名，物理 ID 由
+    <code>_session_id(prefix, case_id, session)</code> 生成。
+  </p>
+
+  <h3>三、expect 的八个断言字段</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>判定内容</th><th>失败级别</th></tr></thead>
+      <tbody>
+        <tr><td><code>events</code></td><td>必须出现的事件</td><td>soft</td></tr>
+        <tr><td><code>forbidden</code></td><td>必须不出现的事件</td><td>soft</td></tr>
+        <tr><td><code>error_code</code></td><td>出现 <code>error</code> 且 <code>code</code> 匹配</td><td>soft</td></tr>
+        <tr><td><code>no_citations</code></td><td>不得出现 <code>citations</code></td><td>soft</td></tr>
+        <tr><td><code>citations_resolve</code></td><td>引用路径必须是 corpus 下的真实文件</td><td>soft</td></tr>
+        <tr><td><code>no_address</code></td><td>文本不得出现 <code>0x</code> + 40 位十六进制</td><td><strong>hard</strong></td></tr>
+        <tr><td><code>text_contains_any</code></td><td>文本必须包含这些字符串</td><td>soft</td></tr>
+        <tr><td><code>preview_fields</code></td><td>预览字段逐个字符串比较</td><td><code>amount</code> 为 hard，其余 soft</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <p><strong><code>text_contains_any</code> 名不副实。</strong>
+    名字像“包含任意一个”，实现是逐个检查、<strong>全部都要包含</strong>。
+    目前只有 e2e-12 使用单元素，差异未被暴露。</p>
+  </div>
+  <div class="callout">
+    <p><strong><code>error_code</code> 隐含两个断言。</strong>
+    必须出现 <code>error</code>，且 <code>code</code> 等于期望值；只写
+    <code>events:["error"]</code> 不会校验具体错误码。</p>
+  </div>
+
+  <h3>四、resume</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>必填</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>approved</code></td><td>是</td><td>是否批准交易</td></tr>
+        <tr><td><code>tx_hash</code></td><td>否</td><td>用户回传的交易哈希，可空</td></tr>
+        <tr><td><code>session</code></td><td>否</td><td>默认 <code>main</code>，必须指向已存在的会话</td></tr>
+        <tr><td><code>expect</code></td><td>否</td><td>结构与轮次的 <code>expect</code> 完全一致</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    恢复的前提是前面轮次零失败；找会话用 <code>get</code> 而不是 <code>setdefault</code>，
+    因为它不允许新建会话，找不到就是数据集写错了。
+  </p>
+
+  <h3>五、解析器的硬性规则</h3>
+  <ul>
+    <li><code>case_id</code> 重复、<code>status</code> 非法、<code>turns</code> 为空，直接报错；</li>
+    <li><code>events</code> / <code>forbidden</code> 里出现未知事件名直接报错，只允许 5 种；</li>
+    <li><code>expect</code> 条数多于 <code>turns</code> 报错，少于则用空对象补齐；</li>
+    <li><code>no_citations</code> / <code>citations_resolve</code> / <code>no_address</code> 必须是布尔；</li>
+    <li><code>preview_fields</code> 必须是“字符串到字符串”的映射，金额要写成 <code>"100"</code>。</li>
+  </ul>
+
+  <h3>六、完整示例：e2e-12</h3>
+  <pre><code>{
+  "case_id": "e2e-12",
+  "category": "resume",
+  "turns": ["帮我把 100 USDT 从 ETH 跨到 BSC，收款地址 0x1111..."],
+  "expect": [
+    {
+      "events": ["tx_preview", "interrupt"],  <span class="c">// 第 1 轮必须预览并暂停</span>
+      "forbidden": ["error"]
+    }
+  ],
+  "resume": {
+    "approved": false,                         <span class="c">// 用户拒绝</span>
+    "tx_hash": null,
+    "expect": {
+      "events": ["token"],                     <span class="c">// 恢复后只输出文本</span>
+      "forbidden": ["tx_preview", "interrupt", "error"],
+      "text_contains_any": ["取消"]
+    }
+  },
+  "status": "active",
+  "note": "拒绝恢复只返回 token，不重发预览"
+}</code></pre>
+
+  <h3>七、两层断言的分工</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>层</th><th>检查内容</th><th>是否依赖用例</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>check_events</code></td>
+          <td>事件名合法、字段类型、预览与中断配对、禁止签名材料、error 含 code/message</td>
+          <td>否，所有 case 共用</td>
+        </tr>
+        <tr>
+          <td><code>check_expect</code></td>
+          <td>events / forbidden / error_code / 引用可追溯 / 地址约束 / 预览字段</td>
+          <td>是，来自数据集</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    三条设计原则：<strong>每条用例同时写正向与负向断言</strong>，否则多发的错误事件不会暴露；
+    <strong>判定强度分级</strong>，只在金额、安全、协议处用硬断言；
+    <strong>用 pending 表达成熟度</strong>，把已知缺口写进数据集，而不是写一条必然失败的用例。
+  </p>
+
+  <p>
+    记住一条：<strong><code>status</code> 决定跑不跑，<code>turns</code> 决定发什么，
+    <code>expect</code> 决定判什么，<code>resume</code> 决定恢复怎么测，<code>note</code> 只给人看。</strong>
+  </p>
+</article>
+
+<article class="qa" id="q03">
+  <div class="qa-head"><span class="qno">Q03</span></div>
+  <h2>session_id 是怎么生成的？同名与异名有什么区别？</h2>
+
+  <p class="answer">
+    <code>turn.session</code> 只是 case 内的<strong>逻辑标签</strong>，物理 <code>session_id</code> 由
+    <strong>运行前缀 + case_id + 标签</strong>拼接生成。
+    同名 → 复用同一个 ID；异名 → 各自独立；不写 → 默认 <code>main</code>。
+  </p>
+
+  <h3>一、生成链路</h3>
+  <p>从数据集字段到检查点里的一条状态，一共经过五步：</p>
+
+  <pre><code><span class="c"># ① 数据集：可以不写 session</span>
+"turns": ["第一轮", {"session": "a", "message": "第二轮"}]
+
+<span class="c"># ② _parse_turn：归一成 Turn(message, session)</span>
+session = raw.get(<span class="s">"session"</span>, <span class="s">"main"</span>)   <span class="c"># 缺省 main</span>
+
+<span class="c"># ③ run_case：按标签惰性登记，已存在则复用</span>
+sessions: dict[str, str] = {}
+session_id = sessions.setdefault(
+    turn.session,
+    _session_id(run_prefix, case.case_id, turn.session),
+)
+
+<span class="c"># ④ _session_id：拼接并截断</span>
+<span class="k">def</span> _session_id(prefix, case_id, slot):
+    <span class="k">return</span> f<span class="s">"{prefix}-{case_id}-{slot}"</span>[:64]
+
+<span class="c"># ⑤ 运行前缀：一次评测一个，秒级时间戳</span>
+run_prefix = <span class="s">"ev"</span> + datetime.now(UTC).strftime(<span class="s">"%Y%m%dT%H%M%S"</span>)</code></pre>
+
+  <p>随后这个字符串进入请求体，服务端把它当作图的 <code>thread_id</code>：</p>
+
+  <pre><code><span class="c"># evaluation/e2e_eval.py</span>
+{<span class="s">"session_id"</span>: session_id, <span class="s">"message"</span>: turn.message}
+
+<span class="c"># src/wanchain_agent/orchestration/state.py</span>
+<span class="k">def</span> thread_config(session_id):
+    <span class="k">return</span> {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: session_id}}</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>步骤</th><th>位置</th><th>产出</th></tr></thead>
+      <tbody>
+        <tr><td>① 读取标签</td><td><code>_parse_turn</code></td><td><code>Turn(message, session)</code>，缺省 <code>main</code></td></tr>
+        <tr><td>② 惰性登记</td><td><code>run_case</code></td><td>标签到物理 ID 的映射</td></tr>
+        <tr><td>③ 拼接 ID</td><td><code>_session_id</code></td><td><code>ev…-e2e-15-a</code></td></tr>
+        <tr><td>④ 传给服务端</td><td><code>/chat</code> 请求体</td><td><code>session_id</code></td></tr>
+        <tr><td>⑤ 定位状态</td><td><code>thread_config</code></td><td><code>thread_id</code>，交给 checkpointer</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>二、唯一性来自三元组</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>组成</th><th>示例</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><code>run_prefix</code></td><td><code>ev20261120T093012</code></td><td>区分不同次运行</td></tr>
+        <tr><td><code>case_id</code></td><td><code>e2e-15</code></td><td>区分不同用例</td></tr>
+        <tr><td><code>turn.session</code></td><td><code>a</code></td><td>区分同一用例内的不同会话</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    所以 <code>turn.session</code> 本身不需要全局唯一：不同用例都写 <code>main</code> 不会冲突，
+    不同运行都写 <code>a</code> 也不会冲突。
+  </p>
+
+  <h3>三、同名复用，异名隔离</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>写法</th><th>结果</th></tr></thead>
+      <tbody>
+        <tr><td>全部不写</td><td>都是 <code>main</code> → 同一个 <code>thread_id</code>，上下文连续</td></tr>
+        <tr><td>都写 <code>"a"</code></td><td>同名 → 仍然是同一个 ID</td></tr>
+        <tr><td>写 <code>"a"</code>、<code>"b"</code>、<code>"a"</code></td><td>只有两个 ID，第三轮复用第一个</td></tr>
+        <tr><td>每轮写不同名字</td><td>才真正做到每轮独立，但这通常不是“多轮”场景</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <p><strong>显式写 <code>session</code> 不代表每轮独立。</strong>
+    决定 ID 的是<strong>名字是否相同</strong>；<code>setdefault</code> 在 key 已存在时只读不写，
+    不会重建，也不会覆盖旧会话。</p>
+  </div>
+
+  <h3>四、现有 case 的多轮分布</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>case</th><th>轮数</th><th>会话</th><th>目的</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>e2e-04</td><td>2</td><td><code>main</code> / <code>main</code></td><td>追问，验证上下文延续</td><td>active</td></tr>
+        <tr><td>e2e-09</td><td>2</td><td><code>main</code> / <code>main</code></td><td>补槽，验证跨轮合并</td><td>pending</td></tr>
+        <tr><td>e2e-16</td><td>2</td><td><code>main</code> / <code>main</code></td><td>改槽，验证新值覆盖旧值</td><td>pending</td></tr>
+        <tr><td>e2e-15</td><td>3</td><td><code>a</code> / <code>b</code> / <code>a</code></td><td>隔离，验证两条会话互不串状态</td><td>active</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    只有 e2e-15 显式写了 session，因为它是唯一需要<strong>两条并行会话</strong>的用例；
+    其余三条都是同一会话内的连续交互，靠默认 <code>main</code> 实现。
+  </p>
+
+  <h3>五、e2e-15 的实际解析过程</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>轮次</th><th><code>turn.session</code></th><th><code>sessions</code> 状态</th><th>行为</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>a</code></td><td><code>{a: ID-A}</code></td><td>新建 A，RAG 回答</td></tr>
+        <tr><td>2</td><td><code>b</code></td><td><code>{a: ID-A, b: ID-B}</code></td><td>新建 B，生成待确认预览</td></tr>
+        <tr><td>3</td><td><code>a</code></td><td>不变</td><td>复用 ID-A，看不到 B 的预览</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>六、resume.session 如何与 turn.session 对应</h3>
+  <p>
+    <code>resume.session</code> <strong>不必等于所有 <code>turn.session</code></strong>，
+    只需命中其中某一个。匹配发生在 <code>sessions</code> 字典的键集合上，不是逐轮比对：
+  </p>
+
+  <pre><code><span class="c"># 键来自每一轮 turn.session</span>
+sessions: dict[str, str] = {}
+
+<span class="c"># 成员查找：resume.session ∈ {turn1.session, turn2.session, ...}</span>
+session_id = sessions.get(case.resume.session)</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><code>turns</code> 的会话</th><th><code>resume.session</code></th><th>结果</th></tr></thead>
+      <tbody>
+        <tr><td><code>main</code></td><td>未写（默认 <code>main</code>）</td><td>命中，恢复 <code>main</code></td></tr>
+        <tr><td><code>a</code>、<code>b</code></td><td><code>"b"</code></td><td>命中 <code>b</code>，与 <code>a</code> 无关</td></tr>
+        <tr><td><code>a</code>、<code>b</code></td><td>未写（默认 <code>main</code>）</td><td><strong>未命中</strong>，记 hard 失败</td></tr>
+        <tr><td><code>a</code></td><td><code>"c"</code></td><td>未命中，记 hard 失败</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>只有第 1 轮产生中断、恢复需要指定其他会话时才显式写 <code>session</code>：</p>
+
+  <pre><code>{
+  "case_id": "e2e-21",
+  "category": "resume",
+  "turns": [
+    {"session": "a", "message": "Wanchain 是什么？"},
+    {"session": "b", "message": "帮我把 100 USDT 从 ETH 跨到 BSC..."}
+  ],
+  "resume": {
+    "session": "b",                       <span class="c">// 只恢复 b</span>
+    "approved": false,
+    "expect": {
+      "events": ["token"],
+      "forbidden": ["tx_preview", "interrupt"]
+    }
+  }
+}</code></pre>
+
+  <p>执行过程：</p>
+  <pre><code>轮次阶段：sessions = {a: ID-A, b: ID-B}
+恢复阶段：sessions.get("b") → ID-B   <span class="c">// a 完全不受影响</span></code></pre>
+
+  <div class="callout warn">
+    <p><strong>默认值不会自动取“最后一轮的会话”。</strong>
+    如果轮次用了 <code>a</code> / <code>b</code>，而 <code>resume</code> 没写 <code>session</code>，
+    它仍然是 <code>main</code>，查不到就直接 hard 失败。多会话用例必须显式写 <code>session</code>。</p>
+  </div>
+
+  <p>
+    一句话：<strong><code>resume.session</code> 决定“恢复哪条对话”，
+    它只需命中某一轮的 <code>turn.session</code>，不需要参与每一轮。</strong>
+  </p>
+
+  <h3>七、四个边界与坑</h3>
+  <ul>
+    <li><strong>截断方向</strong>：<code>[:64]</code> 从尾部截，保留前缀，超长时先丢会话名。当前 ID 约三十字符，安全。</li>
+    <li><strong>前缀精度</strong>：<code>run_prefix</code> 精确到秒，同一秒启动两次评测可能撞 ID，CI 并发时需注意。</li>
+    <li><strong>误合并</strong>：同一 case 内两个不同会话写成同名，会静默合并，解析器不会报错，属于数据集编写纪律。</li>
+    <li><strong>跨运行残留</strong>：Redis 检查点有 TTL（默认 1440 分钟），但前缀含时间戳，正常不会读到上一次运行的状态。</li>
+  </ul>
+
+  <p>
+    一句话：<strong>标签决定“是不是同一条对话”，三元组决定“是不是同一个 ID”；
+    <code>setdefault</code> 保证同名复用而不是覆盖。</strong>
+  </p>
+</article>
+
+<article class="qa" id="q04">
+  <div class="qa-head"><span class="qno">Q04</span></div>
+  <h2>e2e case 的设计逻辑是什么？</h2>
+
+  <p class="answer">
+    一句话：<strong>沿着系统的决策树走，每个分支至少一条用例；每条用例只验证一个可观察的判定点。</strong>
+    端到端测试不是按功能列表写，而是按「从入口到出口的可能路径」写。
+  </p>
+
+  <h3>一、从边界倒推，而不是从功能列表出发</h3>
+  <p>能被观察的东西非常有限：</p>
+  <pre><code>入口：只有 /chat 和 /chat/resume
+出口：只有 5 类 SSE 事件 + 会话状态</code></pre>
+  <p>
+    功能列表里的很多细节（距离度量、分块策略、提示词版本）端到端观察不到，
+    因此不进入 e2e 用例；它们属于下层专项评测。
+  </p>
+
+  <h3>二、沿着决策树切分</h3>
+  <pre><code>请求
+├─ 路由：rag / bridge / clarify
+│   ├─ rag → 检索 → 守卫通过？
+│   │         ├─ 是 → 回答 + 引用
+│   │         └─ 否 → 拒答
+│   └─ bridge → 槽位完整？
+│             ├─ 否 → 澄清
+│             └─ 是 → 校验通过？
+│                     ├─ 否 → error
+│                     └─ 是 → 预览 → interrupt
+└─ 恢复：批准 / 拒绝</code></pre>
+  <p>每个叶子节点，就是一类必须存在的用例：</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>决策点</th><th>对应用例</th></tr></thead>
+      <tbody>
+        <tr><td>RAG 命中</td><td>e2e-01、e2e-02、e2e-05</td></tr>
+        <tr><td>RAG 未命中</td><td>e2e-03</td></tr>
+        <tr><td>槽位不完整</td><td>e2e-07、e2e-08</td></tr>
+        <tr><td>校验失败</td><td>e2e-10、e2e-17、e2e-18</td></tr>
+        <tr><td>预览成功</td><td>e2e-06</td></tr>
+        <tr><td>恢复拒绝</td><td>e2e-12</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>三、用成对设计消除歧义</h3>
+  <p>单条用例容易被误读，关键规则都用「一对」来表达：</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>规则</th><th>正例</th><th>反例</th></tr></thead>
+      <tbody>
+        <tr><td>缺参数要问</td><td>缺源链（07）</td><td>缺金额（08）</td></tr>
+        <tr><td>非法组合要拒</td><td>币不支持链（10）</td><td>链不支持币（18）</td></tr>
+        <tr><td>多轮要合并</td><td>补槽（09）</td><td>改槽（16）</td></tr>
+        <tr><td>不得越权</td><td>要求签名（13）</td><td>要求编地址（14）</td></tr>
+        <tr><td>协议要守</td><td>Schema 校验（19）</td><td>未知事件（20）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    只测一边时，实现很容易「恰好通过」；两边同时约束，才逼出真正的规则。
+  </p>
+
+  <h3>四、每条用例同时写正向和负向断言</h3>
+  <p>
+    只写「必须出现 token」，系统多发一条 <code>citations</code> 也照样通过。所以每条 case 都成对书写：
+  </p>
+  <pre><code>"events": ["token"],
+"forbidden": ["citations", "error", "tx_preview", "interrupt"]</code></pre>
+  <p>负向断言才是真正的约束：</p>
+  <ul>
+    <li>澄清时不得出现预览；</li>
+    <li>拒答时不得出现引用；</li>
+    <li>恢复时不得重发预览。</li>
+  </ul>
+
+  <h3>五、判定强度按风险分级</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>风险</th><th>判定方式</th><th>例子</th></tr></thead>
+      <tbody>
+        <tr><td>资金 / 安全 / 协议</td><td>硬断言，零容忍</td><td>金额字符串、无地址、事件配对</td></tr>
+        <tr><td>业务语义</td><td>软断言，允许波动</td><td>该出现的事件、错误码</td></tr>
+        <tr><td>回答质量</td><td>不在这里测</td><td>交给 RAG 专项与 Judge</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    原因很实际：LLM 输出有随机性，把「回答里有没有某个词」做成硬门禁，
+    会让流水线长期飘红，最后没人看告警。
+  </p>
+
+  <h3>六、用 status 表达成熟度，而不是写假用例</h3>
+  <ul>
+    <li><strong>active</strong>：现在就该通过；</li>
+    <li><strong>pending</strong>：依赖未实现能力（e2e-09、e2e-16、e2e-20）；</li>
+    <li><strong>active + note</strong>：已知实现偏差，用例跟随现状（e2e-03、e2e-11）。</li>
+  </ul>
+  <p>
+    这比「先写一条必然失败的用例占位」更好：基线始终可信，缺口也不会被忘记。
+  </p>
+
+  <h3>七、数据和真实请求对齐</h3>
+  <ul>
+    <li>使用真实措辞，不用 <code>test bridge 100</code> 这类占位文本；</li>
+    <li>跨链用例带真实格式的收款地址；</li>
+    <li>中英文各覆盖，因为检索是跨语言的；</li>
+    <li>金额使用会触发边界的值（0、10.0000001）。</li>
+  </ul>
+  <p>否则用例通过了，也只能证明「测试语料能通过」。</p>
+
+  <h3>八、明确不测什么</h3>
+  <div class="callout warn">
+    <p>端到端刻意不覆盖：回答是否忠于文档、检索排名质量、并发与压测、真实重启恢复。
+    这些留给下层评测，避免 e2e 变成又慢又贵的「万能测试」。</p>
+  </div>
+
+  <p>
+    总结：<strong>从入口和可观察事件倒推，沿决策树枚举分支，用成对用例锁规则，
+    用双向断言防漏判，用强度分级防误伤，用 status 记录成熟度。</strong>
+  </p>
+</article>
+
+<article class="qa" id="q05">
+  <div class="qa-head"><span class="qno">Q05</span></div>
+  <h2>一次 <code>/chat</code> 请求从进入到返回，代码怎么走？</h2>
+
+  <p class="answer">
+    一句话：<strong>uvicorn → Starlette → <code>chat</code> → <code>_stream</code> → <code>ainvoke</code> → 各节点 →
+    <code>_state_events</code> → <code>_encode</code> → socket。</strong>
+    接口函数本身只负责“打包响应”，真正的业务在响应头发出后才开始执行。
+  </p>
+
+  <h3>一、总链路</h3>
+  <pre><code>① uvicorn（ASGI 服务器）
+   └─ await app(scope, receive, send)
+      app 由 create_app() 创建                      app.py
+      （生产由 build_app() 装配）                    config.py
+
+② Starlette 路由
+   └─ chat(payload)                                app.py
+      ├─ ChatRequest 校验（Pydantic）                core/models.py
+      │    失败 → 422，不进函数
+      └─ initial_state(session_id, message)        orchestration/state.py   ← 立即执行
+            → _stream(...)                         app.py                   ← 只创建生成器
+            → StreamingResponse(...) 返回
+
+③ Starlette 发送响应头，然后 async for 驱动生成器
+
+④ _stream 第一次 __anext__
+   └─ graph.ainvoke(run_input, thread_config(session_id))
+      thread_config                                orchestration/state.py
+      编译图来自 build_graph()                      orchestration/graph.py
+      checkpointer 来自 build_checkpointer()        config.py
+                      / make_checkpointer()         state.py
+      → 按 thread_id 读 Redis，合并历史
+
+⑤ LangGraph 逐节点执行（每个节点被 catching 包裹）   nodes.py
+   ├─ entry 节点                                   nodes.py
+   ├─ router 节点                                  nodes.py
+   │   └─ route(message, llm)                      routing/router.py
+   │      ├─ match_rules(text)                     routing/rules.py        ← 规则，0 LLM
+   │      └─ llm.complete_structured(...)          adapters/llm_openai.py  ← 规则未命中
+   │   └─ 条件边 _route_after_router               graph.py
+   │
+   ├─【RAG 分支】
+   │  ├─ knowledge 节点                            nodes.py
+   │  │   └─ knowledge.retrieve(query)             adapters/knowledge_chroma.py
+   │  │      └─ embedding.embed_query(text)        adapters/embedding_siliconflow.py
+   │  ├─ guard 节点                                nodes.py
+   │  │   └─ guard_passed(...)                     knowledge/guard.py
+   │  └─ respond 节点                              nodes.py
+   │      └─ _compose_answer(...)                  nodes.py
+   │         └─ llm.complete(...)                  adapters/llm_openai.py
+   │
+   ├─【Bridge 分支】
+   │  ├─ bridge_validate 节点                      nodes.py
+   │  │   ├─ validate_slots(slots)                 bridge/validator.py
+   │  │   └─ bridge.validate_route(slots)          adapters/bridge_wanchain.py
+   │  ├─ bridge_simulate 节点                      nodes.py
+   │  │   └─ simulate(slots, bridge)               bridge/simulator.py
+   │  │      └─ bridge.simulate(slots)             adapters/bridge_wanchain.py
+   │  ├─ bridge_preview 节点                       nodes.py
+   │  │   └─ build_preview(...)                    bridge/preview.py
+   │  │      └─ bridge.build_unsigned_tx(...)      adapters/bridge_wanchain.py
+   │  │         └─ _create_tx(...)                 adapters/bridge_wanchain.py
+   │  └─ await_approval 节点                       nodes.py
+   │      └─ interrupt(...)                        LangGraph 内置
+   │
+   └─【Clarify 分支】
+      └─ clarify 节点                              nodes.py
+         └─ llm.complete(...)                      adapters/llm_openai.py
+
+   节点之间由条件边决定：_continue_or_respond       graph.py
+   每个节点执行后 checkpointer 写状态；中断时记录 pending interrupt
+
+⑥ graph.ainvoke 返回最终 state
+
+⑦ _state_events(state, session_id)                 app.py
+   ├─ _citations(state)                            app.py
+   └─ 产出 1–2 个 SSEEvent
+
+⑧ _encode(event)                                   app.py
+   └─ "event: x\ndata: {...}\n\n" → Starlette send → uvicorn → socket
+
+⑨ 生成器耗尽 → 响应结束 → 连接关闭</code></pre>
+
+  <h3>二、分层职责</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>层</th><th>代码</th><th>职责</th></tr></thead>
+      <tbody>
+        <tr><td>网络</td><td>uvicorn</td><td>解析 HTTP，提供 ASGI <code>receive</code> / <code>send</code></td></tr>
+        <tr><td>框架</td><td>Starlette / FastAPI</td><td>路由匹配、请求校验、构造并驱动响应</td></tr>
+        <tr><td>接口</td><td><code>chat</code></td><td>组装输入、创建生成器、返回 <code>StreamingResponse</code></td></tr>
+        <tr><td>编排</td><td>LangGraph</td><td>按条件边执行节点，读写检查点</td></tr>
+        <tr><td>领域</td><td><code>nodes</code> / <code>routing</code> / <code>bridge</code> / <code>knowledge</code></td><td>业务判断与确定性计算</td></tr>
+        <tr><td>适配</td><td><code>adapters</code></td><td>LLM、Chroma、跨链 API 的真实调用</td></tr>
+        <tr><td>协议</td><td><code>_state_events</code> / <code>_encode</code></td><td>状态映射为 SSE 事件与字节</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>三、三个分支的终点</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>分支</th><th>触发条件</th><th>终点事件</th></tr></thead>
+      <tbody>
+        <tr><td>RAG</td><td>知识类问题且守卫通过</td><td><code>token</code>（+ <code>citations</code>）</td></tr>
+        <tr><td>Clarify</td><td>跨链但槽位不全</td><td><code>token</code>（追问）</td></tr>
+        <tr><td>Bridge</td><td>槽位齐全</td><td><code>tx_preview</code> + <code>interrupt</code></td></tr>
+        <tr><td>Error</td><td>校验失败或内部异常</td><td><code>error</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>四、谁触发 <code>__anext__</code></h3>
+  <p>驱动代码不在本仓库，在安装的 Starlette 包中：</p>
+  <pre><code>async def stream_response(self, send: Send) -&gt; None:
+    await send({"type": "http.response.start", ...})          <span class="c"># 先发响应头</span>
+    async for chunk in self.body_iterator:                    <span class="c"># 驱动器</span>
+        if not isinstance(chunk, bytes | memoryview):
+            chunk = chunk.encode(self.charset)
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+    await send({"type": "http.response.body", "body": b"", "more_body": False})</code></pre>
+  <p>
+    <code>async for</code> 在 Python 层会反复调用 <code>__anext__()</code>，捕获 <code>StopAsyncIteration</code> 结束，
+    所以没有单独一行“调用 <code>__anext__</code>”的代码。
+    上层的 <code>StreamingResponse.__call__</code> 在 ASGI 2.4+ 直接 <code>await stream_response</code>；
+    旧协议下则与“监听断连”并发运行，任一方结束就取消另一方。
+  </p>
+
+  <h3>五、四个易误解点</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>误解</th><th>实际</th></tr></thead>
+      <tbody>
+        <tr><td>返回 Response 就代表处理完了</td><td>返回时图还没开始跑，首次迭代才执行</td></tr>
+        <tr><td>SSE 就是逐 token 输出</td><td>当前是图跑完后发 1 个 <code>token</code> 事件，整段文本</td></tr>
+        <tr><td>出错会返回 500</td><td>响应头已发出，错误只能变成 <code>error</code> 事件，状态码仍 200</td></tr>
+        <tr><td><code>initial_state</code> 是完整状态</td><td>只是本轮增量，历史由 checkpointer 按 <code>thread_id</code> 合并</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>六、LLM 只出现在三个位置</h3>
+  <ul>
+    <li><strong>路由兜底</strong>：规则未命中时 <code>complete_structured</code>；</li>
+    <li><strong>澄清追问</strong>：<code>clarify</code> 节点 <code>complete</code>；</li>
+    <li><strong>RAG 生成</strong>：<code>respond</code> 节点 <code>complete</code>。</li>
+  </ul>
+  <p>其余全是确定性代码：规则抽取、检索、守卫、槽位校验、模拟、预览组装。</p>
+
+  <div class="callout">
+    <p><strong>两个实现细节：</strong>
+    节点统一被 <code>catching</code> 包裹，异常不会让图崩掉，而是写成 <code>state["error"]</code>；
+    <code>interrupt</code> 不是 SSE 原生概念，而是 LangGraph 的暂停机制，网关只是把“存在 <code>__interrupt__</code>”翻译成一条事件。</p>
+  </div>
+</article>
+
+<article class="qa" id="q06">
+  <div class="qa-head"><span class="qno">Q06</span></div>
+  <h2>评测器是怎么读 SSE 的？<code>flush()</code> 是什么？</h2>
+
+  <p class="answer">
+    <code>_post_stream</code> 只做三件事：<strong>流式发请求 → 按帧解析 → 返回事件列表</strong>。
+    它不用第三方 SSE 库，而是手工实现协议，好处是坏帧也能留下证据。
+  </p>
+
+  <h3>一、三步读取</h3>
+  <pre><code><span class="c"># 1. 保持连接打开，逐行消费</span>
+<span class="k">async with</span> client.stream(<span class="s">"POST"</span>, url, json=payload) <span class="k">as</span> response:
+
+    <span class="c"># 2. 非 200 先读完错误体，再抛异常</span>
+    <span class="k">if</span> response.status_code != <span class="s">200</span>:
+        body = (<span class="k">await</span> response.aread()).decode(<span class="s">"utf-8"</span>, <span class="s">"replace"</span>)
+        <span class="k">raise</span> StreamError(<span class="s">f"HTTP {response.status_code}: {body[:300]}"</span>)
+
+    <span class="c"># 3. 200 才进入流式解析</span>
+    <span class="k">return await</span> _read_stream(response)</code></pre>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>调用</th><th>作用</th><th>何时使用</th></tr></thead>
+      <tbody>
+        <tr><td><code>client.stream(...)</code></td><td>拿到响应头和未读的响应体句柄</td><td>总是</td></tr>
+        <tr><td><code>response.aread()</code></td><td>把整个体读进内存</td><td><strong>仅非 200 分支</strong></td></tr>
+        <tr><td><code>response.aiter_lines()</code></td><td>逐行拉取，边到边处理</td><td>200 分支</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <code>response</code> 不是字符串内容，而是<strong>一个连着网络的句柄</strong>：
+    状态行和响应头已收到，响应体还在传输中。此时访问 <code>.text</code> 会抛 <code>ResponseNotRead</code>。
+  </p>
+
+  <h3>二、<code>flush()</code>：提交一帧</h3>
+  <p>
+    它不是网络缓冲区的 flush，而是 <code>_read_stream</code> 内部定义的提交函数。
+    SSE 一帧由多行累积而成，必须等空行才能解码：
+  </p>
+  <pre><code><span class="k">def</span> flush():
+    <span class="k">nonlocal</span> name, data_lines
+    <span class="k">if</span> name <span class="k">is</span> <span class="k">None</span>:          <span class="c"># 没有事件名，丢弃残留</span>
+        data_lines = []
+        <span class="k">return</span>
+    raw = <span class="s">"\n"</span>.join(data_lines)      <span class="c"># 多个 data 行拼接</span>
+    events.append(_decode_event(name, raw))
+    name = <span class="k">None</span>                      <span class="c"># 重置，准备下一帧</span>
+    data_lines = []</code></pre>
+
+  <ul>
+    <li>遇到空行调用一次：当前帧收齐，解析并入库；</li>
+    <li>循环结束后再调用一次：最后一帧可能没有结尾空行，否则会丢事件；</li>
+    <li>必须 <code>nonlocal</code>，否则修改的是局部变量，外层缓冲永远不变。</li>
+  </ul>
+
+  <h3>三、读取何时结束</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>结束方式</th><th>条件</th><th>结果</th></tr></thead>
+      <tbody>
+        <tr><td>正常结束</td><td>服务端关闭连接 / 体读完</td><td>最后一次 <code>flush()</code>，返回事件列表</td></tr>
+        <tr><td>读超时</td><td>超过 <code>timeout</code> 没有新数据</td><td><code>ReadTimeout</code> → <code>StreamError</code></td></tr>
+        <tr><td>连接异常</td><td>断连、协议错误</td><td><code>HTTPError</code> → <code>StreamError</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <p><strong>SSE 没有 <code>done</code> 事件，连接关闭就是结束信号。</strong>
+    所以正常读完和“被中断”在协议层无法区分，这也是后续建议补结束事件的原因。</p>
+  </div>
+</article>
+
+<article class="qa" id="q07">
+  <div class="qa-head"><span class="qno">Q07</span></div>
+  <h2>没有标准答案，评测结论怎么得出？oracle 是什么？</h2>
+
+  <p class="answer">
+    <strong>Oracle（测试预言）</strong>是判断“实际结果对不对”的权威依据。
+    它不等于期望值，而是<strong>期望值 + 比较规则</strong>的组合。
+  </p>
+
+  <h3>一、三个词要分清</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>概念</th><th>含义</th><th>本项目对应</th></tr></thead>
+      <tbody>
+        <tr><td>期望 expected</td><td>“应该是多少”</td><td><code>amount</code> 应为 <code>100</code></td></tr>
+        <tr><td>oracle 判定机制</td><td>“怎么算对”</td><td><code>check_expect</code> 的规则</td></tr>
+        <tr><td>断言 assertion</td><td>执行判定的动作</td><td><code>failures.append(...)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>二、oracle 的强弱</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>类型</th><th>判定方式</th><th>例子</th></tr></thead>
+      <tbody>
+        <tr><td>精确</td><td>值完全相等</td><td><code>amount == "100"</code>、<code>error_code == "invalid_amount"</code></td></tr>
+        <tr><td>结构</td><td>形状 / 类型 / 必填</td><td>引用必须含四个字段</td></tr>
+        <tr><td>集合</td><td>必须出现 / 禁止出现</td><td><code>events</code> / <code>forbidden</code></td></tr>
+        <tr><td>启发式</td><td>关键词、阈值</td><td><code>text_contains_any</code></td></tr>
+        <tr><td>人工</td><td>人来判</td><td>Judge 校准、抽检</td></tr>
+        <tr><td>一致性</td><td>多次运行或多版本对比</td><td>3 次中位数对比基线</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    RAG 答案没有唯一文本，逐字比对必然误判，这就是 <strong>test oracle problem</strong>。
+    应对方式不是找标准答案，而是换一种 oracle：<strong>判行为、判约束、判结构</strong>。
+  </p>
+
+  <h3>三、RAG 与 Bridge 的断言差异</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>维度</th><th>RAG</th><th>Bridge</th></tr></thead>
+      <tbody>
+        <tr><td>oracle 强度</td><td>结构 + 存在性</td><td><strong>字段值精确</strong></td></tr>
+        <tr><td>随机源</td><td>LLM 生成</td><td>仅路由兜底，多数 0 次</td></tr>
+        <tr><td>核心断言</td><td><code>events</code>、<code>forbidden</code>、<code>citations_resolve</code></td><td><code>preview_fields</code>、<code>error_code</code></td></tr>
+        <tr><td>硬断言</td><td>引用结构、不得编造路径</td><td><strong>金额精度</strong>、拒绝先于预览</td></tr>
+        <tr><td>主要盲区</td><td>内容正确性、引用是否支撑</td><td>上游失败、恢复批准路径</td></tr>
+        <tr><td>结论回答</td><td>“协议对不对”</td><td>“算得对不对”</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>四、<code>data</code> 的边界</h3>
+  <p>
+    <code>data</code> 的<strong>形状</strong>在测试意图内，<strong>含义</strong>不在：
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>内容</th><th>是否断言</th><th>归属</th></tr></thead>
+      <tbody>
+        <tr><td>合法 JSON、<code>token.text</code> 非空</td><td>是，hard</td><td>L5</td></tr>
+        <tr><td>引用非空、字段齐全、<code>score</code> 为数字</td><td>是，hard</td><td>L5</td></tr>
+        <tr><td>预览字段齐全、<code>amount</code> 为字符串</td><td>是，hard</td><td>L5</td></tr>
+        <tr><td>回答是否正确、引用是否支撑结论</td><td><strong>否</strong></td><td>L3</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    后果是：一段“引用结构完整但内容胡编”的回答，可以在 e2e 中通过。
+    这正是 L3 生成专项存在的理由。
+  </p>
+
+  <h3>五、结论怎么得出</h3>
+  <pre><code>每个 case：failures 为空 → passed，否则 failed（区分 hard / soft）
+整体：pass_rate = passed / executed
+      hard_failures = 0  → 契约没破
+      soft_failures &gt; 0 → 质量或业务期望未达成</code></pre>
+  <p>
+    所以“16 通过 / 1 失败 / 硬失败 0”的含义是：
+    <strong>17 条可执行用例中 16 条满足全部约束，没有任何一条违反硬契约</strong>，
+    而不是“16 条回答都正确”。
+  </p>
+</article>
+
+<article class="qa" id="q08">
+  <div class="qa-head"><span class="qno">Q08</span></div>
+  <h2>以 e2e-01 为例，一条 RAG 用例的断言是怎么跑的？</h2>
+
+  <p class="answer">
+    e2e-01 是一条英文知识问答，检查目的只有四个：
+    <strong>路由进 RAG、有回答、有引用、不报错</strong>。
+  </p>
+
+  <h3>一、用例与期望链路</h3>
+  <pre><code>输入：How does Storeman secure cross-chain transactions?
+
+链路：entry → router(rag) → knowledge.retrieve
+      → guard(passed) → respond(LLM) → token + citations</code></pre>
+  <p>
+    用例只写了两个必须出现的事件和三个必须不出现的事件：
+  </p>
+  <pre><code><span class="s">"events"</span>: [<span class="s">"token"</span>, <span class="s">"citations"</span>],
+<span class="s">"forbidden"</span>: [<span class="s">"error"</span>, <span class="s">"tx_preview"</span>, <span class="s">"interrupt"</span>]</code></pre>
+
+  <h3>二、返回的原始流</h3>
+  <pre><code>event: token
+data: {"text": "Storeman 通过 MPC 门限签名、节点质押……"}
+
+event: citations
+data: {"citations": [
+  {"doc_id": "technology/storeman-nodes",
+   "source_path": "corpus/technology/storeman-nodes.md",
+   "snippet": "Storeman nodes use threshold signature schemes...",
+   "score": 0.742}
+]}</code></pre>
+
+  <h3>三、第一层：<code>check_events</code></h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>检查</th><th>级别</th></tr></thead>
+      <tbody>
+        <tr><td>事件名都在 5 类内</td><td>hard</td></tr>
+        <tr><td><code>data</code> 是合法 JSON 对象</td><td>hard</td></tr>
+        <tr><td><code>token.text</code> 非空</td><td>hard</td></tr>
+        <tr><td><code>citations</code> 是非空数组</td><td>hard</td></tr>
+        <tr><td>每条引用含 <code>doc_id / source_path / snippet / score</code></td><td>hard</td></tr>
+        <tr><td><code>score</code> 是数字</td><td>hard</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>四、第二层：<code>check_expect</code></h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>检查</th><th>实际</th><th>级别</th></tr></thead>
+      <tbody>
+        <tr><td><code>token</code> 出现</td><td>有</td><td>soft</td></tr>
+        <tr><td><code>citations</code> 出现</td><td>有</td><td>soft</td></tr>
+        <tr><td><code>error</code> 未出现</td><td>无</td><td>soft</td></tr>
+        <tr><td><code>tx_preview</code> 未出现</td><td>无</td><td>soft</td></tr>
+        <tr><td><code>interrupt</code> 未出现</td><td>无</td><td>soft</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>五、换几种结果会怎么报</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>情况</th><th>输出</th></tr></thead>
+      <tbody>
+        <tr><td>只回了 <code>token</code></td><td><code>[soft] 第 1 轮缺少期望事件 citations</code></td></tr>
+        <tr><td>引用数组为空</td><td><code>[hard] citations 必须是非空数组</code></td></tr>
+        <tr><td>混入 <code>error</code></td><td><code>[soft] 第 1 轮不应出现事件 error</code></td></tr>
+        <tr><td>引用路径不存在</td><td>e2e-01 查不出，需要 <code>citations_resolve</code>（e2e-05）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>六、它证明了什么</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>证明了</th><th>没证明</th></tr></thead>
+      <tbody>
+        <tr><td>英文问题走 RAG 分支</td><td>回答内容是否准确</td></tr>
+        <tr><td>回答非空</td><td>是否覆盖关键要点</td></tr>
+        <tr><td>至少一条结构完整的引用</td><td>引用是否支撑结论</td></tr>
+        <tr><td>没有误入跨链分支</td><td>召回排名与延迟</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <p><strong>这条用例断言的是“链路通、协议对”，不是“回答得好”。</strong>
+    内容质量由 L2 检索专项与 L3 生成专项负责。</p>
+  </div>
+</article>
+
+<article class="qa" id="q09">
+  <div class="qa-head"><span class="qno">Q09</span></div>
+  <h2>为什么要设计 SSE 事件？是我们自创的吗？</h2>
+
+  <p class="answer">
+    不是自创。<strong>“在流上发带类型的事件”是行业通行做法</strong>，
+    我们只是按业务给事件起了名字。
+  </p>
+
+  <h3>一、五个事件对应五种客户端动作</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>事件</th><th>客户端动作</th></tr></thead>
+      <tbody>
+        <tr><td><code>token</code></td><td>渲染文本</td></tr>
+        <tr><td><code>citations</code></td><td>在文本下方挂引用</td></tr>
+        <tr><td><code>tx_preview</code></td><td>弹出交易确认框</td></tr>
+        <tr><td><code>interrupt</code></td><td>停止自动流程，等人确认</td></tr>
+        <tr><td><code>error</code></td><td>展示错误，按码处理</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    如果只有一个 <code>data</code>，客户端只能猜“文本里有没有预览信息”，既不可靠也无法自动化。
+    事件名就是<strong>类型判别器</strong>。
+  </p>
+
+  <h3>二、四个设计理由</h3>
+  <ul>
+    <li><strong>异构载荷需要判别：</strong>文本、引用、预览、错误结构差异极大；</li>
+    <li><strong>暂停是控制信号：</strong>“请确认”写在文本里不等于协议真的暂停；</li>
+    <li><strong>支持分批到达：</strong>SSE 允许先发文本、再发引用；</li>
+    <li><strong>契约稳定：</strong>内部状态怎么改，前端与评测器只依赖事件。</li>
+  </ul>
+
+  <h3>三、业界对照</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>系统</th><th>做法</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI Chat Completions</td><td>SSE + <code>data: [DONE]</code></td></tr>
+        <tr><td>Anthropic Messages</td><td><code>message_start</code>、<code>content_block_delta</code>、<code>message_stop</code></td></tr>
+        <tr><td>Vercel AI SDK</td><td><code>text-delta</code>、<code>tool-call</code>、<code>finish</code></td></tr>
+        <tr><td>LangGraph 平台</td><td><code>updates</code>、<code>messages</code>、<code>custom</code> 多模式</td></tr>
+        <tr><td>AG-UI</td><td><code>TEXT_MESSAGE_CONTENT</code>、<code>TOOL_CALL_START</code>、<code>RUN_FINISHED</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>四、我们与行业的两点差异</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>差异</th><th>影响</th></tr></thead>
+      <tbody>
+        <tr><td><strong>没有正常结束事件</strong></td><td>无法区分“正常结束”和“连接被中断”，也无法携带结束原因</td></tr>
+        <tr><td><strong>事件名按业务命名</strong></td><td><code>tx_preview</code> 不可复用；通用做法是 <code>action_proposal</code> + 业务字段</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <p><strong>一句话：</strong>事件把“服务端内部状态”翻译成“客户端可执行的动作”。
+    文本解决“说什么”，事件解决“接下来该做什么”。</p>
+  </div>
+</article>
+
+<article class="qa" id="q10">
+  <div class="qa-head"><span class="qno">Q10</span></div>
+  <h2>大多数 Agent 都有路由层吗？</h2>
+
+  <p class="answer">
+    行为上大多数都有，但<strong>不一定是一个独立的路由节点</strong>。
+    分流可能藏在模型里、工具调用里，或框架里。
+  </p>
+
+  <h3>一、四种常见形态</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>形态</th><th>实现</th><th>场景</th></tr></thead>
+      <tbody>
+        <tr><td>显式路由节点</td><td>独立 classify 步骤，输出 intent</td><td>LangGraph 多分支、多 Agent</td></tr>
+        <tr><td>工具选择</td><td>LLM 输出 function call</td><td>ReAct、编码 Agent</td></tr>
+        <tr><td>语义路由</td><td>embedding 相似度匹配处理链</td><td>客服分流、成本优化</td></tr>
+        <tr><td>级联路由</td><td>规则/小模型先判，不确定再上大模型</td><td>高并发、成本敏感</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    还有一类<strong>隐式路由</strong>：单 Agent 循环里模型自己决定“要不要检索、要不要调工具”。
+    没有 Router 模块，但分流行为客观存在。
+  </p>
+
+  <h3>二、为什么需要路由</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>动机</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>成本</td><td>简单问题不必走大模型或长链路</td></tr>
+        <tr><td>延迟</td><td>规则命中可毫秒级返回</td></tr>
+        <tr><td>确定性</td><td>关键分支不交给模型自由发挥</td></tr>
+        <tr><td>安全</td><td>高风险操作必须先过校验</td></tr>
+        <tr><td>可观测</td><td>路由结果可记录、可评测、可归因</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>本项目是「规则优先 + LLM 兜底」，属于级联路由的变体。</p>
+
+  <h3>三、显式 vs 隐式</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>显式路由</th><th>隐式路由</th></tr></thead>
+      <tbody>
+        <tr><td>可控性</td><td>高，可写规则</td><td>低，随模型漂移</td></tr>
+        <tr><td>成本</td><td>多数不调 LLM</td><td>每次都要推理</td></tr>
+        <tr><td>评测</td><td>可单独测准确率</td><td>难以归因</td></tr>
+        <tr><td>维护</td><td>需持续补规则</td><td>靠提示词与模型能力</td></tr>
+        <tr><td>风险</td><td>规则覆盖不全时误判</td><td>不稳定、难审计</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>四、什么时候不需要</h3>
+  <ul>
+    <li>产品只有一个功能，例如纯文档问答；</li>
+    <li>只有一个工具，调不调结果都一样；</li>
+    <li>流程完全固定，没有分支。</li>
+  </ul>
+  <p>
+    判断一个 Agent 有没有路由，看五个信号：是否存在 intent/route 字段、提示词是否让模型选分支、
+    是否按场景切换系统提示词、是否有“先查库还是先查工具”的逻辑、工具列表是否随场景变化。
+    命中任意一条，就存在事实上的路由层。
+  </p>
+</article>
+
+<footer>
+  涉及文件：<code>src/wanchain_agent/app.py</code>、<code>orchestration/graph.py</code>、
+  <code>orchestration/nodes.py</code>、<code>orchestration/state.py</code>、
+  <code>routing/router.py</code>、<code>routing/rules.py</code>、
+  <code>bridge/validator.py</code>、<code>bridge/simulator.py</code>、<code>bridge/preview.py</code>、
+  <code>knowledge/guard.py</code>、<code>adapters/*</code>、
+  <code>evaluation/e2e_eval.py</code>、<code>evaluation/report.py</code>
+</footer>
+
+</div>
+</main>
+</body>
+</html>

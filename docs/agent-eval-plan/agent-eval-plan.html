@@ -518,7 +518,7 @@ footer {
     <li><a href="#appendix"><span class="num">A</span>附录</a></li>
   </ul>
   <div class="sidebar-meta">
-    v1.2 · 2026-11-19<br>
+    v1.3 · 2026-11-20<br>
     已吸收评审反馈，阈值待首轮基线校准
   </div>
 </aside>
@@ -531,10 +531,10 @@ footer {
     <h1>Wanchain Agent 评测计划</h1>
     <p class="lede">用一套可复现、可归因、可回归的评测体系，回答 Agent 是否可靠、失败在哪里、每次改动是否真的变好。</p>
     <div class="meta-row">
-      <span class="chip"><strong>v1.2</strong> 已修订</span>
+      <span class="chip"><strong>v1.3</strong> 已修订</span>
       <span class="chip">RAG + 跨链</span>
       <span class="chip">FastAPI / LangGraph</span>
-      <span class="chip">2026-11-19</span>
+      <span class="chip">2026-11-20</span>
     </div>
   </header>
 
@@ -552,9 +552,14 @@ footer {
       <div class="summary-label">数据集<br>P1 146 / P2 340 条</div>
     </div>
     <div class="summary-item">
-      <div class="summary-num">208</div>
+      <div class="summary-num">218</div>
       <div class="summary-label">单元测试<br>当前全部通过</div>
     </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">v1.3 修订摘要</div>
+    <p>同步实施状态：L5 端到端已实现并跑出首轮基线（16 通过 / 1 失败 / 3 跳过，硬失败 0）；<code>e2e_cases.jsonl</code> 由「待建」改为已建 20 条（17 active / 3 pending）；补充首轮基线发现的三个事实——相关性阈值 0.5 偏低、<code>createTx</code> 强制要求 <code>fromAccount</code>、<code>chainId</code> 为十六进制字符串。</p>
   </div>
 
   <div class="callout">
@@ -608,7 +613,7 @@ footer {
           <tr><td class="mono">L2 检索</td><td>能否召回正确文档</td><td>Recall@5、MRR、Context Precision</td><td>未实现</td></tr>
           <tr><td class="mono">L3 生成</td><td>回答是否忠于上下文</td><td>Faithfulness、Answer Relevancy、引用支撑率</td><td>未实现</td></tr>
           <tr><td class="mono">L4 跨链</td><td>槽位、路由校验、交易预览</td><td>槽位 F1、拒绝准确率、预览完整率</td><td>未实现</td></tr>
-          <tr><td class="mono">L5 端到端</td><td>请求到最后一个 SSE 事件</td><td>任务成功率、事件断言通过率</td><td>未实现</td></tr>
+          <tr><td class="mono">L5 端到端</td><td>请求到最后一个 SSE 事件</td><td>任务成功率、事件断言通过率</td><td><strong>已实现，基线 16/17</strong></td></tr>
           <tr><td class="mono">L6 安全与非功能</td><td>危险动作、延迟、成本</td><td>安全违规数、P95 延迟、单次成本</td><td>部分完成</td></tr>
         </tbody>
       </table>
@@ -641,6 +646,9 @@ footer {
           <tr><td>路由只读取当前消息</td><td>第二轮只补一个槽位时无法与上一轮合并</td><td>P1 先实现槽位合并，再启用多轮用例</td></tr>
           <tr><td>澄清事件为 token</td><td>早期文档写成 interrupt，断言会误判</td><td>本版已修正</td></tr>
           <tr><td>无结构化拒答字段</td><td>只能靠关键词判断拒答</td><td>短期关键词 + 无引用断言，中期补字段</td></tr>
+          <tr><td>相关性阈值偏低（0.5）</td><td>库外问题仍带引用（e2e-03）；有效问答 0.62–0.77，库外 0.537</td><td>按实测校准到 0.6 后重跑基线</td></tr>
+          <tr><td><code>createTx</code> 强制要求 <code>fromAccount</code></td><td>未配置时所有跨链预览失败</td><td>适配器改为显式返回 <code>bridge_validation</code>；部署需配置</td></tr>
+          <tr><td><code>chainId</code> 返回十六进制字符串</td><td>按整数解析会冒成 <code>internal</code></td><td>兼容 <code>0x</code> 前缀并转整数</td></tr>
         </tbody>
       </table>
     </div>
@@ -686,7 +694,7 @@ flowchart LR
           <tr><td class="mono">router_cases.jsonl</td><td class="num-cell">50</td><td class="num-cell">100</td><td>P1 已完成</td><td>意图、槽位、澄清</td></tr>
           <tr><td class="mono">rag_cases.jsonl</td><td class="num-cell">40</td><td class="num-cell">100</td><td>待建</td><td>检索与生成</td></tr>
           <tr><td class="mono">bridge_cases.jsonl</td><td class="num-cell">24</td><td class="num-cell">60</td><td>待建</td><td>槽位、路由拒绝、预览</td></tr>
-          <tr><td class="mono">e2e_cases.jsonl</td><td class="num-cell">20</td><td class="num-cell">50</td><td>待建</td><td>端到端任务成功</td></tr>
+          <tr><td class="mono">e2e_cases.jsonl</td><td class="num-cell">20</td><td class="num-cell">50</td><td>已建 20 条<br>17 active / 3 pending</td><td>端到端任务成功</td></tr>
           <tr><td class="mono">safety_cases.jsonl</td><td class="num-cell">12</td><td class="num-cell">30</td><td>待建</td><td>安全与边界</td></tr>
         </tbody>
       </table>
@@ -1068,7 +1076,7 @@ flowchart LR
       <div class="phase">
         <div class="phase-label">P1</div>
         <h3>端到端骨架</h3>
-        <p>建 20 条端到端样本，实现 SSE 契约断言；修复多轮槽位合并，启用补槽与改槽用例。</p>
+        <p>已建 20 条端到端样本并实现 SSE 契约断言，首轮基线 16 通过 / 1 失败 / 3 跳过、硬失败 0。剩余：修复多轮槽位合并，启用补槽与改槽用例。</p>
         <div class="exit"><strong>退出条件：</strong>RAG 与跨链各至少 5 条通过；SSE Schema 零违约；失败可归因；槽位合并修复后 E2E-09 与 E2E-16 各至少 1 条通过。</div>
       </div>
       <div class="phase">
@@ -1107,7 +1115,7 @@ flowchart LR
           <tr><td>文档数</td><td class="num-cell">117</td></tr>
           <tr><td>索引片段</td><td class="num-cell">662</td></tr>
           <tr><td>Embedding</td><td class="mono">BAAI/bge-m3 · 1024 维</td></tr>
-          <tr><td>单元测试</td><td class="num-cell">208 passed</td></tr>
+          <tr><td>单元测试</td><td class="num-cell">218 passed</td></tr>
         </tbody>
       </table>
     </div>
@@ -1125,7 +1133,7 @@ flowchart LR
   </section>
 
   <footer>
-    <span>Wanchain Agent 评测计划 · v1.2</span>
+    <span>Wanchain Agent 评测计划 · v1.3</span>
     <span>已吸收评审反馈 · 阈值待首轮基线校准</span>
   </footer>
 
