@@ -60,6 +60,14 @@ def test_rules_do_not_confuse_wan_token_with_wanchain():
     assert (decision.slots.from_chain, decision.slots.to_chain) == (ChainId.ETH, ChainId.BSC)
 
 
+def test_rules_do_not_treat_wan_chain_as_token():
+    decision = match_rules("把 100 从 WAN 跨到 BSC")
+
+    assert decision is not None and decision.slots is not None
+    assert decision.slots.from_chain is ChainId.WAN
+    assert decision.slots.token is None
+
+
 def test_rules_drop_same_chain_and_leave_slot_missing():
     decision = match_rules("从 ETH 跨到 Ethereum")
 
@@ -129,6 +137,75 @@ def test_route_prefers_rules_without_calling_llm():
     assert decision.intent == "bridge"
     assert decision.reason == "rule:bridge"
     assert llm.calls == []
+
+
+def test_route_merges_unmentioned_slots_from_previous_turn():
+    llm = FakeLLM()
+
+    decision = asyncio.run(
+        route(
+            "从 ETH",
+            llm,
+            previous_slots={"to_chain": "BSC", "token": "USDT", "amount": "100"},
+        )
+    )
+
+    assert decision.intent == "bridge"
+    assert decision.reason == "rule:resume_slots"
+    assert decision.slots is not None and decision.slots.is_complete
+    assert (decision.slots.from_chain, decision.slots.to_chain) == (
+        ChainId.ETH,
+        ChainId.BSC,
+    )
+    assert decision.slots.amount == Decimal(100)
+    assert llm.calls == []
+
+
+def test_route_lets_explicit_values_override_previous_turn():
+    llm = FakeLLM()
+
+    decision = asyncio.run(
+        route(
+            "改成从 WAN 跨，金额 20",
+            llm,
+            previous_slots={
+                "from_chain": "ETH",
+                "to_chain": "BSC",
+                "token": "USDT",
+                "amount": "100",
+            },
+        )
+    )
+
+    assert decision.intent == "bridge"
+    assert decision.slots is not None and decision.slots.is_complete
+    assert decision.slots.from_chain is ChainId.WAN
+    assert decision.slots.to_chain is ChainId.BSC
+    assert decision.slots.token is TokenSymbol.USDT
+    assert decision.slots.amount == Decimal(20)
+
+
+def test_route_does_not_leak_previous_slots_into_fresh_request():
+    llm = FakeLLM()
+
+    decision = asyncio.run(
+        route(
+            "把 50 USDC 从 BSC 跨到 ETH",
+            llm,
+            previous_slots={
+                "from_chain": "ETH",
+                "to_chain": "BSC",
+                "token": "USDT",
+                "amount": "100",
+            },
+        )
+    )
+
+    assert decision.intent == "bridge"
+    assert decision.reason == "rule:bridge"
+    assert decision.slots is not None
+    assert decision.slots.token is TokenSymbol.USDC
+    assert decision.slots.amount == Decimal(50)
 
 
 def test_route_falls_back_to_llm_once_for_unmatched_input():

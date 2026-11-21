@@ -22,6 +22,8 @@ class GraphState(TypedDict, total=False):
     # 带 add reducer：每轮只追加新消息，历史由检查点维护
     messages: Annotated[list[dict[str, Any]], add]
     routing_decision: dict[str, Any] | None
+    # 跨轮槽位记忆：跨链轮次写入，非跨链轮次清空，供下一轮续槽合并
+    slots: dict[str, Any] | None
     rag_context: list[dict[str, Any]] | None
     guard_passed: bool | None
     simulation: dict[str, Any] | None

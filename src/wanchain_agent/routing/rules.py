@@ -87,6 +87,20 @@ def match_rules(message: str) -> RoutingDecision | None:
     return None
 
 
+def is_question(text: str) -> bool:
+    """是否为文档问答口吻，供多轮续槽判断使用。"""
+    return _is_question(text.strip())
+
+
+def extract_slots(text: str) -> BridgeSlots:
+    """只抽取单条消息里的槽位，不判断意图。
+
+    多轮续槽时用它拿到本轮新增/覆盖的字段，再与历史槽位合并。
+    """
+    cleaned = text.strip()
+    return _build_slots(cleaned, _extract_chains(cleaned))
+
+
 def _is_question(text: str) -> bool:
     if text.rstrip().endswith(("?", "？")):
         return True
@@ -107,6 +121,13 @@ def _build_slots(text: str, mentions: list[tuple[int, ChainId]]) -> BridgeSlots:
         mentions = [
             item for item in mentions if not amount_span[0] <= item[0] < amount_span[1]
         ]
+
+    # 反过来，"从 WAN 跨" 里的 WAN 是链名不是代币。只有当 WAN 没有被金额片段
+    # 排除、仍作为链出现时，才清掉代币槽位，避免把源链误记成代币。
+    if token is TokenSymbol.WAN and any(
+        chain is ChainId.WAN for _, chain in mentions
+    ):
+        token = None
 
     from_chain: ChainId | None = None
     to_chain: ChainId | None = None

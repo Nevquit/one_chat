@@ -36,7 +36,7 @@ def test_settings_defaults_when_env_is_empty():
     assert settings.chroma_collection == "wanchain_docs"
     assert settings.index_manifest_path == "data/processed/index_manifest.json"
     assert settings.bridge_from_account is None
-    assert settings.min_relevance == 0.5
+    assert settings.min_relevance == 0.6
     assert settings.checkpointer == "memory"
     assert settings.checkpoint_url == ""
     assert settings.checkpoint_ttl_minutes == 1440

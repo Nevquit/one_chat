@@ -315,3 +315,58 @@ def test_multi_turn_keeps_conversation_history():
         "assistant",
     ]
     assert state["messages"][0]["content"] == "第一个问题"
+
+
+def test_multi_turn_slots_merge_into_preview():
+    graph, *_ = _make_graph(_rag_decision(), responses=["请补充源链。"])
+    config = thread_config(SESSION)
+
+    first = _run(
+        graph.ainvoke(
+            initial_state(session_id=SESSION, message="帮我把 100 USDT 跨到 BSC"),
+            config,
+        )
+    )
+    assert "__interrupt__" not in first
+    assert first["slots"]["to_chain"] == "BSC"
+    assert first["slots"]["from_chain"] is None
+
+    second = _run(
+        graph.ainvoke(
+            initial_state(session_id=SESSION, message="从 ETH"), config
+        )
+    )
+
+    assert "__interrupt__" in second
+    assert second["tx_preview"]["from_chain"] == "ETH"
+    assert second["tx_preview"]["to_chain"] == "BSC"
+    assert second["tx_preview"]["amount"] == "100"
+
+
+def test_multi_turn_slot_override_rebuilds_preview():
+    graph, *_ = _make_graph(_rag_decision())
+    config = thread_config(SESSION)
+
+    first = _run(
+        graph.ainvoke(
+            initial_state(
+                session_id=SESSION, message="帮我把 100 USDT 从 ETH 跨到 BSC"
+            ),
+            config,
+        )
+    )
+    assert "__interrupt__" in first
+
+    # 中断态下直接发新消息：以本轮显式值为准，未提及的字段沿用上一轮
+    second = _run(
+        graph.ainvoke(
+            initial_state(session_id=SESSION, message="改成从 WAN 跨，金额 20"),
+            config,
+        )
+    )
+
+    assert "__interrupt__" in second
+    assert second["tx_preview"]["from_chain"] == "WAN"
+    assert second["tx_preview"]["to_chain"] == "BSC"
+    assert second["tx_preview"]["token"] == "USDT"
+    assert second["tx_preview"]["amount"] == "20"

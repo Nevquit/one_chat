@@ -120,8 +120,20 @@ def make_entry_node(deps: NodeDeps) -> NodeFn:
 def make_router_node(deps: NodeDeps) -> NodeFn:
     async def router(state: GraphState) -> dict[str, Any]:
         with deps.trace.span("router", session_id=state.get("session_id", "")):
-            decision = await route(_last_user_content(state), deps.llm)
-            return {"routing_decision": decision.model_dump(mode="json")}
+            decision = await route(
+                _last_user_content(state),
+                deps.llm,
+                previous_slots=state.get("slots"),
+            )
+            slots = (
+                decision.slots.model_dump(mode="json")
+                if decision.intent == "bridge" and decision.slots is not None
+                else None
+            )
+            return {
+                "routing_decision": decision.model_dump(mode="json"),
+                "slots": slots,
+            }
 
     return router
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from wanchain_agent.core.models import Citation
 
-DEFAULT_MIN_RELEVANCE = 0.5
+DEFAULT_MIN_RELEVANCE = 0.6
 
 REFUSAL_TEXT = "抱歉，官方文档中没有找到足够相关的依据，我无法可靠回答这个问题。"
 
